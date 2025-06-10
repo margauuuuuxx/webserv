@@ -104,7 +104,10 @@ std::string getPage(std::string page)
 		res.append("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
 		return (res);
 	}
-	infile.open(page.c_str());
+
+	std::string full_path = "srcs/" + page;
+
+	infile.open(full_path.c_str());
 	if (!infile.is_open())
 	{
 		res.append("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n");
