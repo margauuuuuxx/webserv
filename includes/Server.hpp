@@ -15,6 +15,9 @@ class Server
         Server(const Server &other);
         Server& operator=(const Server &other);
 
+        int sockfd;
+        const int port = 8080;
+
     public:
         Server();
         ~Server();
