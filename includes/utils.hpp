@@ -2,4 +2,6 @@
 
 #include "includes.hpp"
 
-void    error_exit(std::string message);
+void        errorExit(std::string message);
+std::string loadFile(const std::string &path);
+std::string intToString(const std::string &str);

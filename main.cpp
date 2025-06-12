@@ -2,7 +2,8 @@
 
 int main(int argc, char **argv)
 {
+    (void)argv;
     if (argc != 2)
-        error_exit("Invalid number of arguments");
-    
+        errorExit("Invalid number of arguments");
+    Server server;
 }

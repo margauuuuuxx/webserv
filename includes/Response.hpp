@@ -10,6 +10,9 @@
         - handles file serving/errors/headings
 */
 
+class Request;
+class Config;
+
 class Response
 {
     private:

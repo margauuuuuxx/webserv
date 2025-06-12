@@ -4,6 +4,13 @@
 #include <sys/socket.h>
 #include <iostream>
 #include <stdexcept>
+#include <netinet/in.h> // for specific sockaddr strcuts 
+#include <cstring>
+#include <sstream>
+#include <fstream>
+#include <unistd.h>
+#include <cstdlib>
+#include <string>
 
 #include "Client.hpp"
 #include "Config.hpp"

@@ -15,8 +15,10 @@ class Server
         Server(const Server &other);
         Server& operator=(const Server &other);
 
-        int sockfd;
-        const int port = 8080;
+        int         _sockfd;
+        int         _port;
+        sockaddr_in _address;
+        socklen_t   _addrlen;
 
     public:
         Server();
