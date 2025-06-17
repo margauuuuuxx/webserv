@@ -1,6 +1,6 @@
 NAME	=	webserv
 FLAGS	=	-Wall -Wextra -Werror -std=c++98
-FILES	=	main.cpp $(wildcard srcs/*.cpp)
+FILES	=	$(wildcard srcs/*.cpp)
 
 all : ${NAME}
 

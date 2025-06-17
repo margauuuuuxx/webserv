@@ -1,16 +1,17 @@
 #pragma once
 
-#include "webserv.hpp"
+#include "includes.hpp"
 
-class WebServer
+class Server
 {
 	private:
 		int	_sockfd;
 		sockaddr_in	_address;
 		int	_port;
+		std::vector<struct pollfd> _pollFd;
 	public:
-		WebServer(void);
-		~WebServer(void);
+		Server(void);
+		~Server(void);
 
 		void	setup(void);
 		void	run(void);

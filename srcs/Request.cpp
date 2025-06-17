@@ -1,6 +1,7 @@
-#include "Request.hpp"
+#include "../includes/Request.hpp"
+#include "../includes/includes.hpp"
 
-Request::Request(void): _client_addrlen(sizeof(_client_address)) {}
+Request::Request(void): _clientAddrlen(sizeof(_clientAddress)) {}
 Request::~Request(void) {}
 
 std::string makeError(int code, std::string message)
@@ -103,28 +104,29 @@ std::string whichPage(char buffer[MAX_REQUEST_SIZE])
 	return (res);
 }
 
-int Request::acceptRequest(int sockfd)
+int Request::acceptRequest(int bytesRead, char buffer[MAX_REQUEST_SIZE], int clientFd)
 {
-	int valread;
-	char	buffer[MAX_REQUEST_SIZE] = {0};
+	// int bytesRead;
+	// char	buffer[MAX_REQUEST_SIZE] = {0};
 
-	if ((this->_new_socket = accept(sockfd, (struct sockaddr *)&this->_client_address, &this->_client_addrlen)) < 0)
-		throw std::runtime_error("accept failed");
+	// if ((this->_newSocket = accept(sockfd, (struct sockaddr *)&this->_clientAddress, &this->_clientAddrlen)) < 0)
+	// 	throw std::runtime_error("accept failed");
+	// std::cout << "Client connecté" << std::endl;
 
-	valread = recv(this->_new_socket, buffer, MAX_REQUEST_SIZE, 0);
-	if(valread < 0)
-		throw std::runtime_error("No bytes are there to read");
-	if (valread == 0)
-	{
-		std::cout << "Client disconnected" << std::endl;
-		return (0);
-	}
-	else
-	{
-		std::string raw(buffer, valread);
-		parseRequest(raw, this->_new_socket);
+	// bytesRead = recv(this->_newSocket, buffer, MAX_REQUEST_SIZE, 0);
+	// if(bytesRead < 0)
+	// 	throw std::runtime_error("No bytes are there to read");
+	// if (bytesRead == 0)
+	// {
+	// 	std::cout << "Client disconnected" << std::endl;
+	// 	return (0);
+	// }
+	// else
+	// {
+		std::string raw(buffer, bytesRead);
+		parseRequest(raw, clientFd);
 		this->_content = whichPage(buffer);
-	}
+	// }
 	return (1);
 }
 
@@ -133,9 +135,9 @@ std::string const &Request::getContent(void) const{
 }
 
 int	Request::getSocket(void) const{
-	return (this->_new_socket);
+	return (this->_newSocket);
 }
 
 void Request::closeSocket(void){
-	close(this->_new_socket);
+	close(this->_newSocket);
 }
