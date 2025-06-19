@@ -5,9 +5,9 @@
 class Request
 {
 private:
-	sockaddr_in	_clientAddress;
+	// sockaddr_in	_clientAddress;
 	int			_newSocket;
-	socklen_t	_clientAddrlen;
+	// socklen_t	_clientAddrlen;
 	std::string	_content;
 	std::string _toParse;
 	bool		_transferEncoding;

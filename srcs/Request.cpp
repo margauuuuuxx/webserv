@@ -1,7 +1,7 @@
 #include "../includes/Request.hpp"
 #include "../includes/includes.hpp"
 
-Request::Request(void): _clientAddrlen(sizeof(_clientAddress)), _transferEncoding(false), _contentLen(0){}
+Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _transferEncoding(false), _contentLen(0){}
 Request::~Request(void) {}
 
 std::string makeError(int code, std::string message)
@@ -177,7 +177,7 @@ void checkHeaders(Request &obj)
 	std::string line;
 	size_t pos;
 
-	while (std::getline(istream, line))
+	while (std::getline(istream, line, '\r'))
 	{
 		std::cout << "line: " << line << std::endl;
 		pos = line.find(":");
@@ -194,6 +194,7 @@ void checkHeaders(Request &obj)
 			std::istringstream value_stream(line);
 			size_t value;
 			value_stream >> value;
+			std::cout << "new value: " << value << std::endl;
 			obj.setContentLen(value);
 			return ;
 		}
@@ -204,7 +205,9 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	std::string buffer(cbuffer);
 	if (isRawEmpty(buffer) && this->_toParse.empty())
 		return (0);
+	std::cout << "\e[0;33msetToParse()\e[0m" << std::endl;
 	checkHeaders(*this);
+	std::cout << "\e[0;33mafter checkHeaders()\e[0m" << std::endl;
 	std::cout << "value content-len: " << this->_contentLen << std::endl;
 	std::cout << "value transfer-encoding: " << this->_transferEncoding << std::endl;
 	std::cout << "buffer: " << buffer << std::endl;
