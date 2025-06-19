@@ -14,6 +14,7 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <vector>
+#include <map>
 #include <poll.h>
 
 # define RED "\033[31m"

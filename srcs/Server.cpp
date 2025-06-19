@@ -68,6 +68,7 @@ void Server::run()
 {
 	Request	request;
 	std::string	hello;
+	std::map <int, Request> clients;
 
 	/*
 		serverFd est la socket d'écoute, toutes les requêtes passent par elle.
@@ -92,7 +93,7 @@ void Server::run()
 		*/
 		if ((poll(this->_pollFd.data(), this->_pollFd.size(), -1)) < 0)
 			throw std::runtime_error("Poll failed");
-		std::cout << "poll ok" << std::endl;
+		// std::cout << "poll ok" << std::endl;
 		for (size_t i = 0; i < this->_pollFd.size(); ++i)
 		{
 			// if (!request.acceptRequest(this->_sockfd))
@@ -108,13 +109,11 @@ void Server::run()
 					if ((clientSocket = accept(this->_sockfd, NULL, NULL)) < 0)
 						throw std::runtime_error("accept failed");
 					std::cout << "Client connecté" << std::endl;
-					struct pollfd clientFd;
-					clientFd.fd = clientSocket;
-					clientFd.events = POLLIN;
-					clientFd.revents = 0;
-					std::cout << "attempt to push the object into vector" << std::endl;
-					this->_pollFd.push_back(clientFd);
-					std::cout << "client pushed into vector" << std::endl;
+					struct pollfd newClient;
+					newClient.fd = clientSocket;
+					newClient.events = POLLIN;
+					newClient.revents = 0;
+					this->_pollFd.push_back(newClient);
 				}
 				else if (this->_pollFd[i].revents & POLLIN)
 				{
@@ -126,14 +125,13 @@ void Server::run()
 							sinon: reception de la requête bonne, envoie des infos nécessaire
 					*/
 					int clientFd = this->_pollFd[i].fd;
-					int bytesRead;
-					char buffer[MAX_REQUEST_SIZE];
+					int bytesRead = 0;
+					char buffer[MAX_REQUEST_SIZE] = {0};
 
 					bytesRead = recv(this->_pollFd[i].fd, buffer, MAX_REQUEST_SIZE, 0);
 					if (bytesRead < 0)
 					{
-						//handleError
-						std::cout << "bytesRead < 0" << std::endl;
+						clients.erase(clientFd);
 						close(clientFd);
 						this->_pollFd.erase(this->_pollFd.begin() + i);
 						--i;
@@ -141,25 +139,24 @@ void Server::run()
 					}
 					else if (bytesRead == 0)
 					{
-						std::cout << "client " << i << " deconnecté" << std::endl;
+						clients.erase(clientFd);
 						close(clientFd);
 						this->_pollFd.erase(this->_pollFd.begin() + i);
 						--i;
+						std::cout << "client " << i << " deconnecté" << std::endl;
 					}
 					else
 					{
 						std::cout << "bytesRead == " << bytesRead << std::endl;
 						std::cout << "client " << i << ':' << std::endl;
-						//parsing
-						//send
-						std::cout << buffer << std::endl;
-
-						/*
-							Le parsing et l'envoie sont temporaires...
-						*/
-						request.acceptRequest(bytesRead, buffer, clientFd);
-						hello = getPage(request.getContent());
-						send(clientFd , hello.c_str() , hello.length(), 0);
+						if (clients[clientFd].setToParse(buffer))
+						{
+							std::cout << "SEND" << std::endl;
+							clients.erase(clientFd);
+							// request.acceptRequest(bytesRead, buffer, clientFd);
+							// hello = getPage(request.getContent());
+							// send(clientFd , hello.c_str() , hello.length(), 0);
+						}
 					}
 				}
 			}
