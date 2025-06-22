@@ -147,11 +147,15 @@ void Server::run()
 					}
 					else
 					{
-						std::cout << "bytesRead == " << bytesRead << std::endl;
-						std::cout << "client " << i << ':' << std::endl;
+						// std::cout << "bytesRead == " << bytesRead << std::endl;
+						// std::cout << "client " << i << ':' << std::endl;
+						std::cout << "----------------------------------" << std::endl;
 						if (clients[clientFd].setToParse(buffer))
 						{
-							std::cout << "SEND" << std::endl;
+							std::cout << "SEND:" << std::endl;
+							std::cout << "\e[0;34m" << clients[clientFd].getToParse() << "\e[0m" << std::endl;
+							clients[clientFd].setTransferEncoding(false);
+							clients[clientFd].setContentLen(0);
 							clients.erase(clientFd);
 							// request.acceptRequest(bytesRead, buffer, clientFd);
 							// hello = getPage(request.getContent());
