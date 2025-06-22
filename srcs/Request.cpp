@@ -1,19 +1,37 @@
 #include "../includes/Request.hpp"
 #include "../includes/includes.hpp"
 
-Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _transferEncoding(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
+Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
 
-std::string makeError(int code, std::string message)
+// std::string makeError(int code, std::string message)
+// {
+// 	std::ostringstream oss;
+
+// 	oss << "HTTP/1.1 " << code << " " << message << "\r\n"
+// 		<< "Content-Length: 0\r\n"
+// 		<< "Connection: close\r\n"
+// 		<< "\r\n";
+// 	return (oss.str());
+// }
+
+std::string makeError(int code, const std::string& message)
 {
 	std::ostringstream oss;
+	std::ostringstream body;
+
+	body << "<html><body><h1>" << code << " " << message << "</h1></body></html>";
 
 	oss << "HTTP/1.1 " << code << " " << message << "\r\n"
-		<< "Content-Length: 0\r\n"
+		<< "Content-Type: text/html\r\n"
+		<< "Content-Length: " << body.str().size() << "\r\n"
 		<< "Connection: close\r\n"
-		<< "\r\n";
-	return (oss.str());
+		<< "\r\n"
+		<< body.str();
+
+	return oss.str();
 }
+
 
 int isRawEmpty(std::string &raw)
 {
@@ -152,6 +170,10 @@ bool const &Request::getTransferEncoding(void) const{
 	return (this->_transferEncoding);
 }
 
+bool const &Request::getWaitingState(void) const{
+	return (this->_waitingForData);
+}
+
 int	Request::getSocket(void) const{
 	return (this->_newSocket);
 }
@@ -285,8 +307,17 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 		{
 			std::cout << "isIncomplete in getTransferEncoding condition" << std::endl;
 			this->_toParse.append(buffer);
-			this->_contentLenCopy = countLenTransferEncoding(buffer);
+			if (!this->_waitingForData)
+				this->_contentLenCopy = countLenTransferEncoding(buffer);
+			this->_waitingForData = !this->_waitingForData;
 			std::cout << "TransferEncoding: " << this->_contentLen << std::endl;
+			if (this->_contentLenCopy != 0 && isRawEmpty(buffer))
+			{
+				this->_toParse.assign(makeError(400, "Bad request"));
+				return (1);
+			}
+			if (this->_contentLenCopy == 0)
+				return (1);
 		}
 		else if (isHeader != 1 && this->getContentLenCopy() != 0 && this->getContentLenCopy() != std::string::npos)
 		{

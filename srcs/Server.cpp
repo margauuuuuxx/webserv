@@ -79,7 +79,7 @@ void Server::run()
 	*/
 	struct pollfd serverFd;
 
-	std::cout << "into run" << std::endl;
+	// std::cout << "into run" << std::endl;
 	serverFd.fd = this->_sockfd;
 	serverFd.events = POLLIN;
 	serverFd.revents = 0;
