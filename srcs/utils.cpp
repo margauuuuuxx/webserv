@@ -77,3 +77,33 @@ char	*ft_itoa(int n)
 	return (num);
 }
 
+std::string makeError(int code, const std::string& message)
+{
+	std::ostringstream oss;
+	std::ostringstream body;
+
+	body << "<html><body><h1>" << code << " " << message << "</h1></body></html>";
+
+	oss << "HTTP/1.1 " << code << " " << message << "\r\n"
+		<< "Content-Type: text/html\r\n"
+		<< "Content-Length: " << body.str().size() << "\r\n"
+		<< "Connection: close\r\n"
+		<< "\r\n"
+		<< body.str();
+
+	return oss.str();
+}
+
+std::string toLower(std::string line, size_t end)
+{
+	std::string::iterator it = line.begin();
+	std::string lower;
+
+	while (it != line.end() && end)
+	{
+		lower.push_back((char)std::tolower(*it));
+		it++;
+		end--;
+	}
+	return (lower);
+}

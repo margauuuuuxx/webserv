@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <poll.h>
+#include <ctime>
 
 # define RED "\033[31m"
 # define GREEN "\033[32m"
@@ -31,3 +32,5 @@
 #include "utils.hpp"
 
 char	*ft_itoa(int n);
+std::string makeError(int code, const std::string& message);
+std::string toLower(std::string line, size_t end);

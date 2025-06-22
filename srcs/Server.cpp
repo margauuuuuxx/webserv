@@ -69,6 +69,7 @@ void Server::run()
 	Request	request;
 	std::string	hello;
 	std::map <int, Request> clients;
+	std::map <int, std::time_t> timeout;
 
 	/*
 		serverFd est la socket d'écoute, toutes les requêtes passent par elle.
@@ -91,13 +92,32 @@ void Server::run()
 			Appel à poll() et début d'une boucle pour itérer dans le vecteur _PollFd
 			pour checker chaque socket.
 		*/
-		if ((poll(this->_pollFd.data(), this->_pollFd.size(), -1)) < 0)
+		if ((poll(this->_pollFd.data(), this->_pollFd.size(), 1000)) < 0)
 			throw std::runtime_error("Poll failed");
 		// std::cout << "poll ok" << std::endl;
 		for (size_t i = 0; i < this->_pollFd.size(); ++i)
 		{
 			// if (!request.acceptRequest(this->_sockfd))
 			// 	continue ;
+
+			std::time_t now = std::time(NULL);
+			for (size_t i = 0; i < timeout.size(); i++)
+			{
+				int clientTimeout = this->_pollFd[i].fd;
+				// std::cout << "check du: " << clientTimeout << std::endl;
+				if (timeout[clientTimeout] + 10 < now && clients[clientTimeout].getContentLenCopy() > 0 && clients[clientTimeout].getContentLenCopy() != std::string::npos)
+				{
+					std::cout << "timeout: " << timeout[i] << "/" << now << std::endl;
+					std::string error = makeError(408, "Request Timeout");
+					send(clientTimeout, error.c_str(), error.size(), 0);
+					std::cout << "SEND: " << error << std::endl;
+					clients.erase(clientTimeout);
+					close(clientTimeout);
+					this->_pollFd.erase(this->_pollFd.begin() + i);
+					std::cout << "client " << i << " deconnecté" << std::endl;
+				}
+			}
+
 			if (this->_pollFd[i].revents)
 			{
 				if (this->_pollFd[i].fd == serverFd.fd)
@@ -137,8 +157,14 @@ void Server::run()
 						--i;
 						std::cout << "Error recv" << std::endl;
 					}
-					else if (bytesRead == 0)
+					else if (bytesRead == 0 || this->_pollFd[i].revents & (POLLHUP | POLLERR))
 					{
+						if (clients[clientFd].getContentLenCopy() > 0)
+						{
+							std::string error = makeError(400, "Bad Request");
+							send(clientFd, error.c_str(), error.size(), 0);
+							std::cout << "SEND" << error << std::endl;
+						}
 						clients.erase(clientFd);
 						close(clientFd);
 						this->_pollFd.erase(this->_pollFd.begin() + i);
@@ -147,6 +173,7 @@ void Server::run()
 					}
 					else
 					{
+						timeout[clientFd] = std::time(NULL);
 						// std::cout << "bytesRead == " << bytesRead << std::endl;
 						// std::cout << "client " << i << ':' << std::endl;
 						std::cout << "----------------------------------" << std::endl;
@@ -154,8 +181,7 @@ void Server::run()
 						{
 							std::cout << "SEND:" << std::endl;
 							std::cout << "\e[0;34m" << clients[clientFd].getToParse() << "\e[0m" << std::endl;
-							clients[clientFd].setTransferEncoding(false);
-							clients[clientFd].setContentLen(0);
+							clients[clientFd].reset();
 							clients.erase(clientFd);
 							// request.acceptRequest(bytesRead, buffer, clientFd);
 							// hello = getPage(request.getContent());
