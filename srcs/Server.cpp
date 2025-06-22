@@ -174,8 +174,6 @@ void Server::run()
 					else
 					{
 						timeout[clientFd] = std::time(NULL);
-						// std::cout << "bytesRead == " << bytesRead << std::endl;
-						// std::cout << "client " << i << ':' << std::endl;
 						std::cout << "----------------------------------" << std::endl;
 						if (clients[clientFd].setToParse(buffer))
 						{

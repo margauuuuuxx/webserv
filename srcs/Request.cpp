@@ -186,7 +186,6 @@ void detectBodyHeader(Request &obj)
 		std::istringstream value_stream(line);
 		if (header.find("transfer-encoding") != std::string::npos)
 		{
-			std::cout << "transfer-encoding trouvé" << std::endl;
 			std::string chunked;
 			value_stream >> header >> chunked;
 			if (chunked.find("chunked") == std::string::npos)
@@ -214,7 +213,6 @@ size_t countLenTransferEncoding(std::string buffer)
 
 	if (!(iss >> std::hex >> len))
 		return (std::string::npos);
-	std::cout << "len: " << std::hex << len << std::endl;
 	return (len);
 }
 
@@ -234,7 +232,6 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	{
 		if (isHeader != 1 && this->getTransferEncoding())
 		{
-			std::cout << "isIncomplete in getTransferEncoding condition" << std::endl;
 			if (!this->_waitingForData)
 			{
 				this->_contentLenCopy = countLenTransferEncoding(buffer);
@@ -245,10 +242,8 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 				}
 			}
 			this->_waitingForData = !this->_waitingForData;
-			std::cout << "TransferEncoding: " << this->_contentLen << std::endl;
 			if ((!this->_waitingForData && buffer.size() - 2 < this->_contentLenCopy) || (this->_contentLenCopy != 0 && isRawEmpty(buffer)))
 			{
-				std::cout << "buffer size: " << buffer.size() - 2 << " contentLenCopy: " << this->_contentLenCopy << std::endl;
 				this->_toParse.assign(makeError(400, "Bad Request"));
 				return (1);
 			}
@@ -275,17 +270,12 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 			}
 			if (this->_contentLenCopy == 0)
 				return (1);
-			std::cout << "content-length: " << this->_appendLen << std::endl;
 		}
 		else
 			this->_toParse.append(buffer);
-		std::cout << "buffer length: " << buffer.length() - 2 << std::endl;
-		std::cout << this->_toParse << std::endl << std::endl;
 		return (0);
 	}
 	else
-	{
 		this->_toParse.assign(buffer);
-	}
 	return (1);
 }
