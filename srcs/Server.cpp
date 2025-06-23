@@ -105,7 +105,8 @@ void Server::run()
 			{
 				int clientTimeout = this->_pollFd[i].fd;
 				// std::cout << "check du: " << clientTimeout << std::endl;
-				if (timeout[clientTimeout] + 10 < now && clients[clientTimeout].getContentLenCopy() > 0 && clients[clientTimeout].getContentLenCopy() != std::string::npos)
+				if ((timeout[clientTimeout] + 10 < now && clients[clientTimeout].getToParse())
+					|| (timeout[clientTimeout] + 10 < now && clients[clientTimeout].getContentLenCopy() > 0 && clients[clientTimeout].getContentLenCopy() != std::string::npos))
 				{
 					std::cout << "timeout: " << timeout[i] << "/" << now << std::endl;
 					std::string error = makeError(408, "Request Timeout");
@@ -179,6 +180,7 @@ void Server::run()
 						{
 							std::cout << "SEND:" << std::endl;
 							std::cout << "\e[0;34m" << clients[clientFd].getToParse() << "\e[0m" << std::endl;
+							clients[clientFd].parse();
 							clients[clientFd].reset();
 							clients.erase(clientFd);
 							// request.acceptRequest(bytesRead, buffer, clientFd);

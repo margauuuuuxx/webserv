@@ -216,14 +216,29 @@ size_t countLenTransferEncoding(std::string buffer)
 	return (len);
 }
 
+int checkCRLF(std::string buffer)
+{
+	size_t bufferLen = buffer.size();
+	size_t LF = bufferLen - 1;
+	size_t CR = bufferLen - 2;
+	if (CR != 13 && LF != 10)
+		return (0);
+	return (1);
+}
+
 int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	std::string buffer(cbuffer);
 	int isHeader = 0;
 
-	if (isRawEmpty(buffer) && this->_toParse.empty())
+	if (this->_toParse.empty() && isRawEmpty(buffer))
 		return (0);
+	if (this->_contentLen == std::string::npos && buffer.size() == 2 && ((int)buffer.at(0) == 13) && ((int)buffer.at(1) == 10))
+	{
+		this->_toParse.append(buffer);
+		return (1);
+	}
 	detectBodyHeader(*this);
-	if (this->_contentLen == std::string::npos - 1)
+	if (checkCRLF(buffer) || this->_contentLen == std::string::npos - 1)
 	{
 		this->_toParse.assign(makeError(400, "Bad Request"));
 		return (1);
@@ -278,4 +293,35 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	else
 		this->_toParse.assign(buffer);
 	return (1);
+}
+
+void Request::parse(void){
+	std::istringstream iss(this->_toParse);
+	std::string line;
+	int i = 0;
+
+	while (std::getline(iss, line, '\n'))
+	{
+		std::cout << "line[" << i << "]: " << line << std::endl;
+		if (i == 0)
+		{
+			int firstSp = -1;
+			int secondSp = -1;
+			for (size_t i = 0; i != line.size(); i++)
+			{
+				if (line.at(i) == ' ')
+				{
+					if (firstSp == -1)
+						firstSp = i;
+					else
+						secondSp = i;
+				}
+			}
+			this->_method = line.substr(0, firstSp);
+			this->_content = line.substr(firstSp + 1, secondSp - firstSp - 1);
+			this->_version = line.substr(secondSp + 1);
+			std::cout << "first line: \"" << this->_method << "\" \"" << this->_content << "\" \"" <<this->_version << '\"' << std::endl;
+		}
+		i++;
+	}
 }

@@ -29,5 +29,6 @@ public:
 	int					setToParse(char buffer[MAX_REQUEST_SIZE]);
 	void				setContentLen(size_t len);
 	void				setTransferEncoding(bool state);
+	void				parse(void);
 	void				reset(void);
 };
