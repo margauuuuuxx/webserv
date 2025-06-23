@@ -71,6 +71,9 @@ void Parser::parser(){
 		{
 			parseServer();
 		}
+		else {
+			throw std::runtime_error("unknow dirrective: " + _tokens[_i]);
+		}
 		_i++;
 	}
 }
@@ -206,8 +209,9 @@ void Parser::parseRoutes(Server& server){
 		parseRouteElements(route);
 		_i++;
 	}
+	if (_tokens[_i] != "}")
+		throw std::runtime_error("unexpected end of file missing } for route dirrective");
 	server.routes.push_back(route);
-
 }
 
 void Parser::parseRouteElements(Route& route){
@@ -257,7 +261,10 @@ void Parser::parseIndex(Route& route){
 void Parser::parseAllowMethods(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		route.allow_methods.push_back(_tokens[_i]);
+		if (_tokens[_i] == "GET" || _tokens[_i] == "POST" || _tokens[_i] == "DELETE")
+			route.allow_methods.push_back(_tokens[_i]);
+		else
+		 throw std::runtime_error("not a valide methode: " + _tokens[_i]);
 		_i++;
 	}
 }
@@ -296,8 +303,8 @@ void Parser::parseCgiExtention(Route& route){
 		route.cgi_extension.push_back(_tokens[_i]);
 		_i++;
 	}
-
 }
+
 void Parser::parseCgiPath(Route& route){
 	route.cgi_path = _tokens[++_i];
 	if (_tokens[++_i] != ";")
@@ -334,11 +341,14 @@ bool Parser::isValidIPv4(const std::string& ip) {
 
 	return parts == 4;
 }
+
 void Parser::printServer() const{
  for (std::vector<Server>::const_iterator it = _servers.begin(); it != _servers.end(); ++it) {
         it->printServerInfos();
         std::cout << std::endl; // Add spacing between servers
     }
-	
 }
 
+std::vector<Server> Parser::getServer() const{
+	return _servers;
+}

@@ -12,6 +12,7 @@ public:
 	Parser();
 	~Parser();
 	void parsefile(const std::string& filename);
+	std::vector<Server> getServer() const;
 private:
 	std::vector<std::string>	_tokens;
 	size_t						_i;
