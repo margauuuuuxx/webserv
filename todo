@@ -1,0 +1,10 @@
+- port
+- host
+- servernames
+- error pages
+- client max body request
+- routes
+. allow methodes
+. http redirect []
+. location
+. dirrectory listing

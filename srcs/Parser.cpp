@@ -2,20 +2,23 @@
 #include "../includes/Parser.hpp"
 #include <cstddef>
 #include <fstream>
+#include <iostream>
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 Parser::Parser(){}
 Parser::~Parser(){}
 void Parser::parsefile(const std::string& filename){
-	std::ifstream file;
+	std::ifstream *file;
 	try{
 		file = openfile(filename);
 		tokenizer(file);
 		// printTokens();
 		parser();
 		printServer();
+		file.close();
 	}catch(std::exception& e){
 		std::cout << "Parsing error: " << e.what() << std::endl;
 	}
