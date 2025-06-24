@@ -307,25 +307,16 @@ void Request::parse(void){
 
 	while (std::getline(iss, line, '\n'))
 	{
+		std::istringstream issLine(line);
 		std::cout << "line[" << i << "]: " << line << std::endl;
 		if (i == 0)
 		{
-			int firstSp = -1;
-			int secondSp = -1;
-			for (size_t i = 0; i != line.size(); i++)
-			{
-				if (line.at(i) == ' ')
-				{
-					if (firstSp == -1)
-						firstSp = i;
-					else
-						secondSp = i;
-				}
-			}
-			this->_method = line.substr(0, firstSp);
-			this->_content = line.substr(firstSp + 1, secondSp - firstSp - 1);
-			this->_version = line.substr(secondSp + 1);
+			issLine >> this->_method >> this->_content >> this->_version;
 			std::cout << "first line: \"" << this->_method << "\" \"" << this->_content << "\" \"" <<this->_version << '\"' << std::endl;
+			if (this->_method.empty() || this->_content.empty() || this->_version.empty() || !issLine.eof()
+				|| (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
+				|| this->_version != "HTTP/1.1")
+				return ((void)assignError(makeError(400, "Bad Request")));
 		}
 		i++;
 	}

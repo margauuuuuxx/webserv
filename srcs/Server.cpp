@@ -178,9 +178,9 @@ void Server::run()
 						std::cout << "----------------------------------" << std::endl;
 						if (clients[clientFd].setToParse(buffer))
 						{
+							clients[clientFd].parse();
 							std::cout << "SEND:" << std::endl;
 							std::cout << "\e[0;34m" << clients[clientFd].getToParse() << "\e[0m" << std::endl;
-							clients[clientFd].parse();
 							clients[clientFd].reset();
 							clients.erase(clientFd);
 							// request.acceptRequest(bytesRead, buffer, clientFd);
