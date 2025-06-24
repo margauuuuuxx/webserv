@@ -27,6 +27,7 @@ public:
 	bool		const	&getWaitingState(void) const;
 	int					getSocket(void) const;
 	int					setToParse(char buffer[MAX_REQUEST_SIZE]);
+	int					assignError(std::string error);
 	void				setContentLen(size_t len);
 	void				setTransferEncoding(bool state);
 	void				parse(void);

@@ -144,6 +144,11 @@ void Request::setTransferEncoding(bool state){
 	this->_transferEncoding = state;
 }
 
+int Request::assignError(std::string error){
+	this->_toParse.assign(error);
+	return (1);
+}
+
 void Request::reset(void)
 {
 	this->_appendLen = 0;
@@ -212,7 +217,10 @@ size_t countLenTransferEncoding(std::string buffer)
 	size_t len;
 
 	if (!(iss >> std::hex >> len))
+	{
+		std::cout << "iss a foiré" << std::endl;
 		return (std::string::npos);
+	}
 	return (len);
 }
 
@@ -221,9 +229,9 @@ int checkCRLF(std::string buffer)
 	size_t bufferLen = buffer.size();
 	size_t LF = bufferLen - 1;
 	size_t CR = bufferLen - 2;
-	if (CR != 13 && LF != 10)
-		return (0);
-	return (1);
+	if ((int)buffer.at(CR) == 13 && (int)buffer.at(LF) == 10)
+		return (1);
+	return (0);
 }
 
 int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
@@ -232,17 +240,16 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 
 	if (this->_toParse.empty() && isRawEmpty(buffer))
 		return (0);
-	if (this->_contentLen == std::string::npos && buffer.size() == 2 && ((int)buffer.at(0) == 13) && ((int)buffer.at(1) == 10))
+	detectBodyHeader(*this);
+	if (this->_contentLen == std::string::npos - 1)
+		return (assignError(makeError(400, "Bad Request for header")));
+	if ((this->_contentLen == std::string::npos && !this->getTransferEncoding()) && buffer.size() == 2 && ((int)buffer.at(0) == 13) && ((int)buffer.at(1) == 10))
 	{
 		this->_toParse.append(buffer);
 		return (1);
 	}
-	detectBodyHeader(*this);
-	if (checkCRLF(buffer) || this->_contentLen == std::string::npos - 1)
-	{
-		this->_toParse.assign(makeError(400, "Bad Request"));
-		return (1);
-	}
+	if (!checkCRLF(buffer))
+		return (assignError(makeError(400, "Bad Request for CRLF")));
 	if ((isHeader = isIncomplete(*this, this->_toParse)) > 0)
 	{
 		if (isHeader != 1 && this->getTransferEncoding())
@@ -251,20 +258,18 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 			{
 				this->_contentLenCopy = countLenTransferEncoding(buffer);
 				if (this->_contentLenCopy == std::string::npos)
-				{
-					this->_toParse.assign(makeError(400, "Bad Request"));
-					return (1);
-				}
+					return (assignError(makeError(400, "Bad Request for hexa")));
 			}
 			this->_waitingForData = !this->_waitingForData;
 			if ((!this->_waitingForData && buffer.size() - 2 < this->_contentLenCopy) || (this->_contentLenCopy != 0 && isRawEmpty(buffer)))
-			{
-				this->_toParse.assign(makeError(400, "Bad Request"));
-				return (1);
-			}
+				return (assignError(makeError(400, "Bad Request for buffer size")));
 			if (!this->_waitingForData)
-				for (size_t i = 0; i != this->_contentLenCopy + 2; i++)
+			{
+				for (size_t i = 0; i != this->_contentLenCopy; i++)
 					this->_toParse.push_back(buffer.at(i));
+				this->_toParse.push_back('\r');
+				this->_toParse.push_back('\n');
+			}
 			else
 				this->_toParse.append(buffer);
 			if (this->_contentLenCopy == 0)

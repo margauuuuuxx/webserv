@@ -105,7 +105,7 @@ void Server::run()
 			{
 				int clientTimeout = this->_pollFd[i].fd;
 				// std::cout << "check du: " << clientTimeout << std::endl;
-				if ((timeout[clientTimeout] + 10 < now && clients[clientTimeout].getToParse())
+				if ((timeout[clientTimeout] + 10 < now && !(clients[clientTimeout].getToParse()).empty())
 					|| (timeout[clientTimeout] + 10 < now && clients[clientTimeout].getContentLenCopy() > 0 && clients[clientTimeout].getContentLenCopy() != std::string::npos))
 				{
 					std::cout << "timeout: " << timeout[i] << "/" << now << std::endl;
