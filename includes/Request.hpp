@@ -6,6 +6,7 @@ class Request
 {
 private:
 	std::string	_toParse;
+	bool		_error;
 	bool		_transferEncoding;
 	bool		_waitingForData;
 	size_t		_contentLen;
@@ -14,6 +15,7 @@ private:
 	std::string	_method;
 	std::string	_content;
 	std::string	_version;
+	std::map <std::string, std::string> _headers;
 public:
 	Request(void);
 	~Request(void);

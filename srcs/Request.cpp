@@ -1,7 +1,7 @@
 #include "../includes/Request.hpp"
 #include "../includes/includes.hpp"
 
-Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
+Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
 
 int isRawEmpty(std::string &raw)
@@ -146,6 +146,7 @@ void Request::setTransferEncoding(bool state){
 
 int Request::assignError(std::string error){
 	this->_toParse.assign(error);
+	this->_error = true;
 	return (1);
 }
 
@@ -174,22 +175,25 @@ int isIncomplete(Request &obj, std::string &content)
 	return (0);
 }
 
-void detectBodyHeader(Request &obj)
+int detectBodyHeader(Request &obj)
 {
 	std::istringstream istream(obj.getToParse());
 	std::string line;
 	size_t pos;
+	int res = 0;
 
-	if (obj.getContentLen() != std::string::npos || obj.getTransferEncoding())
-		return ;
+	if (res >= 2)
+		return (res);
 	while (std::getline(istream, line, '\r'))
 	{
+		if (res >= 2)
+			return (res);
 		pos = line.find(": ");
 		if (pos == std::string::npos)
 			continue ;
 		std::string header(toLower(line, pos));
 		std::istringstream value_stream(line);
-		if (header.find("transfer-encoding") != std::string::npos)
+		if (header.find("transfer-encoding:") != std::string::npos)
 		{
 			std::string chunked;
 			value_stream >> header >> chunked;
@@ -197,18 +201,19 @@ void detectBodyHeader(Request &obj)
 				obj.setContentLen(std::string::npos - 1);
 			else
 				obj.setTransferEncoding(true);
-			return ;
+			res++;
 		}
-		else if (header.find("content-length") != std::string::npos)
+		else if (header.find("content-length:") != std::string::npos)
 		{
 			size_t value;
 			if (!(value_stream >> header >> value))
 				obj.setContentLen(std::string::npos - 1);
 			else
 				obj.setContentLen(value);
-			return ;
+			res++;
 		}
 	}
+	return (res);
 }
 
 size_t countLenTransferEncoding(std::string buffer)
@@ -240,8 +245,7 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 
 	if (this->_toParse.empty() && isRawEmpty(buffer))
 		return (0);
-	detectBodyHeader(*this);
-	if (this->_contentLen == std::string::npos - 1)
+	if (detectBodyHeader(*this) >= 2 || this->_contentLen == std::string::npos - 1)
 		return (assignError(makeError(400, "Bad Request for header")));
 	if ((this->_contentLen == std::string::npos && !this->getTransferEncoding()) && buffer.size() == 2 && ((int)buffer.at(0) == 13) && ((int)buffer.at(1) == 10))
 	{
@@ -303,21 +307,51 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 void Request::parse(void){
 	std::istringstream iss(this->_toParse);
 	std::string line;
+	std::string currentToken;
 	int i = 0;
 
+	if (this->_error)
+		return ;
 	while (std::getline(iss, line, '\n'))
 	{
+		line.erase(line.size() - 1);
 		std::istringstream issLine(line);
-		std::cout << "line[" << i << "]: " << line << std::endl;
 		if (i == 0)
 		{
 			issLine >> this->_method >> this->_content >> this->_version;
-			std::cout << "first line: \"" << this->_method << "\" \"" << this->_content << "\" \"" <<this->_version << '\"' << std::endl;
-			if (this->_method.empty() || this->_content.empty() || this->_version.empty() || !issLine.eof()
-				|| (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
+			issLine >> std::ws;
+			if (this->_method.empty() || this->_content.empty() || this->_version.empty()
+				|| !issLine.eof()
 				|| this->_version != "HTTP/1.1")
 				return ((void)assignError(makeError(400, "Bad Request")));
+			else if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
+				return ((void)assignError(makeError(405, "Method Not Allowed")));
+		}
+		else if (!line.empty())
+		{
+			if (std::isspace(line.at(0)))
+				this->_headers[currentToken].append(line);
+			else
+			{
+				size_t colon = line.find(':');
+				if (colon == std::string::npos)
+					return ((void)assignError(makeError(400, "Bad Request")));
+				std::string token = toLower(line, colon);
+				currentToken = token;
+				std::string value = line.substr(colon + 1);
+				if (!this->_headers[token].empty())
+					std::cout << "doublon?" << std::endl;
+				this->_headers[token] = value;
+			}
 		}
 		i++;
+	}
+	std::cout << "method	:" << this->_method << std::endl;
+	std::cout << "content	:" << this->_content << std::endl;
+	std::cout << "version	:" << this->_version << std::endl;
+	for (std::map<std::string, std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
+	{
+		std::cout << "first	:" << it->first << std::endl;
+		std::cout << "second	:" << it->second << std::endl;
 	}
 }
