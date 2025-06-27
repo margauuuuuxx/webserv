@@ -172,10 +172,17 @@ void Server::run()
 						--i;
 						std::cout << "client " << i << " deconnecté" << std::endl;
 					}
+					else if (bytesRead > MAX_REQUEST_SIZE)
+					{
+						std::string error = makeError(413, "Content Too Large");
+						send(clientFd, error.c_str(), error.size(), 0);
+						clients[clientFd].reset();
+						clients.erase(clientFd);
+					}
 					else
 					{
 						timeout[clientFd] = std::time(NULL);
-						std::cout << "----------------------------------" << std::endl;
+						std::cout << "buffer:" << buffer << std::endl;
 						if (clients[clientFd].setToParse(buffer))
 						{
 							clients[clientFd].parse();

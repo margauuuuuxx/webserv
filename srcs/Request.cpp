@@ -4,6 +4,9 @@
 Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
 
+/*
+	La fonction vérifie si la string contient uniquement des whitespaces.
+*/
 int isRawEmpty(std::string &raw)
 {
 	size_t count = 0;
@@ -12,104 +15,13 @@ int isRawEmpty(std::string &raw)
 		return (1);
 	for (std::string::iterator it = raw.begin(); it != raw.end(); it++)
 	{
-		if (*it == '\r' || *it == '\n' || *it == ' ')
+		if (std::isspace(*it))
 			count++;
 	}
 	if (count == raw.length())
 		return (1);
 	return (0);
 }
-
-// void parseRequest(std::string raw, int sockfd)
-// {
-// 	std::istringstream iss(raw);
-// 	std::string method;
-// 	std::string path;
-// 	std::string version;
-// 	std::ifstream test;
-
-// 	if (isRawEmpty(raw))
-// 		return ;
-// 	iss >> method >> path >> version;
-// 	// std::cout << "méthode: " << method << std::endl;
-// 	// std::cout << "chemin: " << path << std::endl;
-// 	// std::cout << "version: " << version << std::endl;
-// 	if (method != "GET" && method != "POST" && method != "DELETE")
-// 	{
-// 		std::string error = makeError(405, "Method Not Allowed");
-// 		send(sockfd, error.c_str(), error.length(), 0);
-// 		// throw std::runtime_error("mauvaise méthode");
-// 		close(sockfd);
-// 		return ;
-// 	}
-// 	if (version != "HTTP/1.1")
-// 	{
-// 		std::cerr << "probleme version" << std::endl;
-// 		throw std::runtime_error("mauvaise version");
-// 	}
-// 	std::string file = path.substr(1);
-// 	if (!file.empty())
-// 	{
-// 		test.open(file.c_str());
-// 		if (!test.is_open())
-// 		{
-// 			std::cerr << "probleme page" << std::endl;
-// 			throw std::runtime_error("mauvaise page");
-// 		}
-// 		test.close();
-// 	}
-// }
-
-// std::string whichPage(char buffer[MAX_REQUEST_SIZE])
-// {
-// 	int i = 0;
-// 	std::string res;
-
-// 	// std::cout << buffer << std::endl;
-// 	while (buffer[i])
-// 	{
-// 		if (buffer[i] == '/' && buffer[i + 1])
-// 		{
-// 			i++;
-// 			break ;
-// 		}
-// 		i++;
-// 	}
-// 	while (buffer[i] != ' ' || buffer[i] != '\n')
-// 	{
-// 		if (buffer[i] == ' ' || buffer[i] == '\n')
-// 			break ;
-// 		res.push_back(buffer[i]);
-// 		i++;
-// 	}
-// 	return (res);
-// }
-
-// int Request::acceptRequest(int bytesRead, char buffer[MAX_REQUEST_SIZE], int clientFd)
-// {
-// 	// int bytesRead;
-// 	// char	buffer[MAX_REQUEST_SIZE] = {0};
-
-// 	// if ((this->_newSocket = accept(sockfd, (struct sockaddr *)&this->_clientAddress, &this->_clientAddrlen)) < 0)
-// 	// 	throw std::runtime_error("accept failed");
-// 	// std::cout << "Client connecté" << std::endl;
-
-// 	// bytesRead = recv(this->_newSocket, buffer, MAX_REQUEST_SIZE, 0);
-// 	// if(bytesRead < 0)
-// 	// 	throw std::runtime_error("No bytes are there to read");
-// 	// if (bytesRead == 0)
-// 	// {
-// 	// 	std::cout << "Client disconnected" << std::endl;
-// 	// 	return (0);
-// 	// }
-// 	// else
-// 	// {
-// 		std::string raw(buffer, bytesRead);
-// 		parseRequest(raw, clientFd); //error handling
-// 		this->_content = whichPage(buffer);
-// 	// }
-// 	return (1);
-// }
 
 std::string const &Request::getContent(void) const{
 	return (this->_content);
@@ -175,6 +87,13 @@ int isIncomplete(Request &obj, std::string &content)
 	return (0);
 }
 
+/*
+	La fonction detectBodyHeader sert à vérifier si un content-length
+	ou un transfer-encoding est présent.
+	Les deux headers ne sont pas compatibles et donc ne peuvent pas être ensemble.
+	La fonction prévient les doublons et la compatibilité.
+	Elle met aussi à jour les variables associées aux headers.
+*/
 int detectBodyHeader(Request &obj)
 {
 	std::istringstream istream(obj.getToParse());
@@ -182,16 +101,21 @@ int detectBodyHeader(Request &obj)
 	size_t pos;
 	int res = 0;
 
-	if (res >= 2)
-		return (res);
-	while (std::getline(istream, line, '\r'))
+	// std::cout << "to parse dans body header: " << obj.getToParse() << std::endl;
+	// std::cout << "detect body header" << std::endl;
+	while (std::getline(istream, line, '\n'))
 	{
 		if (res >= 2)
+		{
+			std::cout << "res = " << res << " au début de la boucle" << std::endl;
 			return (res);
-		pos = line.find(": ");
+		}
+		pos = line.find(":");
 		if (pos == std::string::npos)
 			continue ;
-		std::string header(toLower(line, pos));
+		std::cout << "line: " << line << std::endl;
+		std::string header(toLower(line, pos + 1));
+		std::cout << "header: " << header << std::endl;
 		std::istringstream value_stream(line);
 		if (header.find("transfer-encoding:") != std::string::npos)
 		{
@@ -202,6 +126,7 @@ int detectBodyHeader(Request &obj)
 			else
 				obj.setTransferEncoding(true);
 			res++;
+			std::cout << "res: " << res << std::endl;
 		}
 		else if (header.find("content-length:") != std::string::npos)
 		{
@@ -211,8 +136,10 @@ int detectBodyHeader(Request &obj)
 			else
 				obj.setContentLen(value);
 			res++;
+			std::cout << "res: " << res << std::endl;
 		}
 	}
+	// std::cout << "tout est normal, on retourne " << res << std::endl; 
 	return (res);
 }
 
@@ -229,35 +156,75 @@ size_t countLenTransferEncoding(std::string buffer)
 	return (len);
 }
 
-int checkCRLF(std::string buffer)
+int checkCRLF(std::string &buffer)
 {
-	size_t bufferLen = buffer.size();
-	size_t LF = bufferLen - 1;
-	size_t CR = bufferLen - 2;
-	if ((int)buffer.at(CR) == 13 && (int)buffer.at(LF) == 10)
-		return (1);
-	return (0);
+	for (size_t i = 1; i < buffer.size(); ++i)
+	{
+		if (buffer[i] == '\r' && i + 1 >= buffer.size() && buffer[i + 1] != '\n')
+			return (0);
+		if (buffer[i] == '\n' && buffer[i - 1] != '\r')
+			return (0);
+	}
+	return (1);
 }
 
+/*
+	setToParse fais un petit parsing mais sert surtout à donner
+	une requête complète a la vraie fonction de parsing.
+*/
 int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	std::string buffer(cbuffer);
 	int isHeader = 0;
 
-	if (this->_toParse.empty() && isRawEmpty(buffer))
+	if (isRawEmpty(buffer))
 		return (0);
+	// std::cout << "toParse: " << this->_toParse << std::endl;
 	if (detectBodyHeader(*this) >= 2 || this->_contentLen == std::string::npos - 1)
 		return (assignError(makeError(400, "Bad Request for header")));
+	std::cout << "detectBodyHeader est passé" << std::endl;
 	if ((this->_contentLen == std::string::npos && !this->getTransferEncoding()) && buffer.size() == 2 && ((int)buffer.at(0) == 13) && ((int)buffer.at(1) == 10))
 	{
 		this->_toParse.append(buffer);
+		std::cout << "on retourne 1" << std::endl;
 		return (1);
 	}
 	if (!checkCRLF(buffer))
+	{
+		std::cout << "problème de CRLF" << std::endl;
 		return (assignError(makeError(400, "Bad Request for CRLF")));
+	}
+	std::cout << "On check si complet" << std::endl;
+	/*
+		La première fois que cette fonction est appelé, _toParse est vide et on part
+		du principe que le buffer contient une requête complète.
+		Donc on l'assigne tout simplement.
+	*/
+	if (this->_toParse.empty())
+		this->_toParse.assign(buffer);
+	/*
+		On vérifie que ce soit le cas avec la fonction isIncomplete(). Si elle est
+		incomplète, on efface _toParse pour recommencer et faire les choses BIEN.
+	*/
 	if ((isHeader = isIncomplete(*this, this->_toParse)) > 0)
 	{
+		if (this->_toParse == buffer)
+			this->_toParse.clear();
+		std::cout << "Requête pas complète" << std::endl;
 		if (isHeader != 1 && this->getTransferEncoding())
 		{
+			/*
+				Un body sous transfer-encoding: chunked ressemble à ceci:
+				3
+				ccc
+				a
+				cccccccccc
+				Il faut donc, avoir le nombre de caractères donnés, puis
+				recevoir les caractères.
+				Si la fonction recoit un nombre et que les données reçues
+				ont trop de caractères, il coupe ce qu'il "dépasse".
+				Si par contre la les données reçues ne sont pas assez nombreuses
+				alors la fonction renvoit une erreur.
+			*/
 			if (!this->_waitingForData)
 			{
 				this->_contentLenCopy = countLenTransferEncoding(buffer);
@@ -277,10 +244,19 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 			else
 				this->_toParse.append(buffer);
 			if (this->_contentLenCopy == 0)
+			{
+				std::cout << "on retourne 1" << std::endl;
 				return (1);
+			}
 		}
 		else if (isHeader != 1 && this->getContentLenCopy() != 0 && this->getContentLenCopy() != std::string::npos)
 		{
+			/*
+				Le nombre de caractères à recevoir est dans les headers.
+				Si il y a trop de caractères, on coupe le trop plein.
+				Si il n'y en a pas assez, alors on attends 10 secondes avant
+				de renvoyer un timeout.
+			*/
 			this->_appendLen = buffer.length() - 2;
 			if ((long int)this->_contentLenCopy - (long int)this->_appendLen >= 0)
 			{
@@ -290,17 +266,20 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 			else
 			{
 				this->_toParse.append(buffer, 0, this->_contentLenCopy);
+				std::cout << "on retourne 1" << std::endl;
 				return (1);
 			}
 			if (this->_contentLenCopy == 0)
+			{
+				std::cout << "on retourne 1" << std::endl;
 				return (1);
+			}
 		}
 		else
 			this->_toParse.append(buffer);
 		return (0);
 	}
-	else
-		this->_toParse.assign(buffer);
+	std::cout << "on retourne 1" << std::endl;
 	return (1);
 }
 
@@ -308,44 +287,72 @@ void Request::parse(void){
 	std::istringstream iss(this->_toParse);
 	std::string line;
 	std::string currentToken;
+	bool isBody = false;
 	int i = 0;
 
 	if (this->_error)
 		return ;
+	std::cout << "-----------PARSE-----------" << std::endl;
 	while (std::getline(iss, line, '\n'))
 	{
+		/*
+			Recheck et suppression de CRLF
+		*/
+		if (line.at(line.size() - 1) != 13)
+			return ((void)assignError(makeError(400, "Bad Request CRLF in parse()")));
 		line.erase(line.size() - 1);
 		std::istringstream issLine(line);
 		if (i == 0)
 		{
+			/*
+				Parsing de la request line (methode, fichier, version)
+			*/
+			if (line.size() > MAX_REQUEST_LINE_SIZE)
+				return ((void)assignError(makeError(413, "Content Too Large")));
 			issLine >> this->_method >> this->_content >> this->_version;
 			issLine >> std::ws;
 			if (this->_method.empty() || this->_content.empty() || this->_version.empty()
 				|| !issLine.eof()
 				|| this->_version != "HTTP/1.1")
-				return ((void)assignError(makeError(400, "Bad Request")));
+				return ((void)assignError(makeError(400, "Bad Request request line")));
 			else if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 				return ((void)assignError(makeError(405, "Method Not Allowed")));
 		}
-		else if (!line.empty())
+		else if (!line.empty() && !isBody)
 		{
+			/*
+				Parsing des headers
+			*/
+			if (line.size() > MAX_REQUEST_LINE_SIZE)
+				return ((void)assignError(makeError(413, "Content Too Large")));
 			if (std::isspace(line.at(0)))
 				this->_headers[currentToken].append(line);
 			else
 			{
 				size_t colon = line.find(':');
 				if (colon == std::string::npos)
-					return ((void)assignError(makeError(400, "Bad Request")));
+					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
 				std::string token = toLower(line, colon);
 				currentToken = token;
 				std::string value = line.substr(colon + 1);
 				if (!this->_headers[token].empty())
-					std::cout << "doublon?" << std::endl;
+				{
+					std::cout << "doublon" << std::endl;
+					return ((void)assignError(makeError(400, "Bad Request doublon")));
+				}
 				this->_headers[token] = value;
 			}
 		}
+		else
+		{
+			if (!isBody)
+				isBody = true;
+			this->_body.append(line);
+		}
 		i++;
 	}
+	if (this->_headers.size() > MAX_HEADERS_SIZE)
+		return ((void)assignError(makeError(413, "Content Too Large")));
 	std::cout << "method	:" << this->_method << std::endl;
 	std::cout << "content	:" << this->_content << std::endl;
 	std::cout << "version	:" << this->_version << std::endl;
