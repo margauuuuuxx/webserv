@@ -283,6 +283,26 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	return (1);
 }
 
+bool Request::checkDuplicate()
+{
+	for (std::map<std::string, std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
+	{
+		std::map<std::string, std::string>::iterator it2 = it;
+		it2++;
+		while (it2 != this->_headers.end())
+		{
+			if (it->first == it2->first)
+			{
+				
+			}
+			it2++;
+		}
+		std::cout << "first	:" << it->first << std::endl;
+		std::cout << "second	:" << it->second << std::endl;
+	}
+	return (true);
+}
+
 void Request::parse(void){
 	std::istringstream iss(this->_toParse);
 	std::string line;
@@ -335,11 +355,11 @@ void Request::parse(void){
 				std::string token = toLower(line, colon);
 				currentToken = token;
 				std::string value = line.substr(colon + 1);
-				if (!this->_headers[token].empty())
-				{
-					std::cout << "doublon" << std::endl;
-					return ((void)assignError(makeError(400, "Bad Request doublon")));
-				}
+				// if (!this->_headers[token].empty())
+				// {
+				// 	std::cout << "doublon" << std::endl;
+				// 	return ((void)assignError(makeError(400, "Bad Request doublon")));
+				// }
 				this->_headers[token] = value;
 			}
 		}
@@ -351,6 +371,8 @@ void Request::parse(void){
 		}
 		i++;
 	}
+	if (this->checkDuplicate())
+		return ((void)assignError(makeError(400, "Bad Request doublons")));
 	if (this->_headers.size() > MAX_HEADERS_SIZE)
 		return ((void)assignError(makeError(413, "Content Too Large")));
 	std::cout << "method	:" << this->_method << std::endl;

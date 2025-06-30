@@ -33,6 +33,7 @@ public:
 	int					assignError(std::string error);
 	void				setContentLen(size_t len);
 	void				setTransferEncoding(bool state);
+	bool				checkDuplicate(void);
 	void				parse(void);
 	void				reset(void);
 };
