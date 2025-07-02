@@ -50,8 +50,24 @@ int isRawEmpty(std::string &raw)
 	return (0);
 }
 
+std::string	const	&Request::getMethod(void) const {
+	return (this->_method);
+}
+
 std::string const &Request::getContent(void) const{
 	return (this->_content);
+}
+
+std::string	const	&Request::getVersion(void) const {
+	return (this->_version);
+}
+
+std::map<std::string, std::string>	const	&Request::getHeaders(void) const {
+	return (this->_headers);
+}
+
+std::string	const	&Request::getBody(void) const {
+	return (this->_body);
 }
 
 std::string const &Request::getToParse(void) const{
@@ -72,6 +88,10 @@ bool const &Request::getTransferEncoding(void) const{
 
 bool const &Request::getWaitingState(void) const{
 	return (this->_waitingForData);
+}
+
+bool		const	Request::getErrorFlag(void) const {
+	return (this->_error);
 }
 
 void Request::setContentLen(size_t len){
