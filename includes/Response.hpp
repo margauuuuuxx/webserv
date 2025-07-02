@@ -19,8 +19,12 @@ class Response
         Response();
         Response(const Response &other);
         Response& operator=(const Response &other);
+		const Request &_req;
+		std::string _response;
 
     public:
-        Response(const Request& req, const Config& conf);
+        Response(const Request& req);
         ~Response();
+
+		std::string const &getResponse() const;
 };

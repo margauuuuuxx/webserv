@@ -182,7 +182,6 @@ void Server::run()
 					else
 					{
 						timeout[clientFd] = std::time(NULL);
-						std::cout << "buffer:" << buffer << std::endl;
 						if (clients[clientFd].setToParse(buffer))
 						{
 							clients[clientFd].parse();

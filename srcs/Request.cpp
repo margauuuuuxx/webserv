@@ -90,7 +90,7 @@ bool const &Request::getWaitingState(void) const{
 	return (this->_waitingForData);
 }
 
-bool		const	Request::getErrorFlag(void) const {
+bool const &Request::getErrorFlag(void) const {
 	return (this->_error);
 }
 
@@ -124,13 +124,22 @@ int isIncomplete(Request &obj, std::string &content)
 {
 	size_t crlf = content.find("\r\n\r\n");
 	if (crlf == std::string::npos)
+	{
+		std::cout << "pas de CRLFCRLF" << std::endl;
 		return (1);
+	}
 	size_t contentLen = obj.getContentLen();
 	size_t contentLenCopy = obj.getContentLenCopy();
 	if (obj.getTransferEncoding() && contentLenCopy != 0)
+	{
+		std::cout << "transfer encoding pas termine" << std::endl;
 		return (2);
+	}
 	else if (contentLen != 0 && contentLen != std::string::npos && contentLenCopy != 0 && contentLenCopy != std::string::npos)
+	{
+		std::cout << "content-length pas termine" << std::endl;
 		return (2);
+	}
 	return (0);
 }
 
@@ -223,7 +232,7 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	std::string buffer(cbuffer);
 	int isHeader = 0;
 
-	if (isRawEmpty(buffer))
+	if (this->_toParse.empty() && isRawEmpty(buffer))
 		return (0);
 	// std::cout << "toParse: " << this->_toParse << std::endl;
 	if (detectBodyHeader(*this) >= 2 || this->_contentLen == std::string::npos - 1)
@@ -381,19 +390,16 @@ void Request::parse(void){
 					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
 				std::string key = toLower(line, colon);
 				currentKey = key;
-				std::string value = line.substr(colon + 1);
+				std::string value = ft_strtrim(line.substr(colon + 1));
 				std::map<std::string, std::string>::iterator it;
-				if (key != "authorization" && key != "proxy-authorization" && (it = this->_headers.find(key)) == this->_headers.end())
+				if (key == "authorization" || key == "proxy-authorization")
+					this->_multiHeaders.insert(std::pair<std::string, std::string>(key, value));
+				else if ((it = this->_headers.find(key)) == this->_headers.end())
 					this->_headers[key] = value;
-				else
-				{
-					if (key == "authorization" || key == "proxy-authorization")
-						this->_multiHeaders.insert(std::pair<std::string, std::string>(key, value));
-					else if (!uniqueHeaders.count(key))
+				else if (!uniqueHeaders.count(key))
 						it->second.append(", " + value);
-					else
-						return ((void)assignError(makeError(400, "Bad Request multiple unique header")));
-				}
+				else
+					return ((void)assignError(makeError(400, "Bad Request multiple unique header")));
 			}
 		}
 		else

@@ -107,3 +107,21 @@ std::string toLower(std::string line, size_t end)
 	}
 	return (lower);
 }
+
+std::string ft_strtrim(std::string s)
+{
+	size_t start = 0;
+	std::string::iterator it = s.begin();
+	while (std::isspace(*it))
+	{
+		start++;
+		it++;
+	}
+	size_t len = 0;
+	while (!std::isspace(*it))
+	{
+		len++;
+		it++;
+	}
+	return (s.substr(start, len));
+}

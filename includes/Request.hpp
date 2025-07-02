@@ -5,8 +5,8 @@
 class Request
 {
 private:
-	Request(const Request &other);
-	Request& operator=(const Request &other);
+	// Request(const Request &other);
+	// Request& operator=(const Request &other);
 	std::string	_toParse;
 	bool		_error;
 	bool		_transferEncoding;
@@ -36,7 +36,7 @@ public:
 	bool		const	&getTransferEncoding(void) const;
 	bool		const	&getWaitingState(void) const;
 	int					getSocket(void) const;
-	bool		const	getErrorFlag(void) const;
+	bool		const	&getErrorFlag(void) const;
 	int					assignError(std::string error);
 	int					setToParse(char buffer[MAX_REQUEST_SIZE]);
 	void				setContentLen(size_t len);
