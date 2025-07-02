@@ -160,7 +160,7 @@ void Server::run()
 					}
 					else if (bytesRead == 0 || this->_pollFd[i].revents & (POLLHUP | POLLERR))
 					{
-						if (clients[clientFd].getContentLenCopy() > 0)
+						if (bytesRead > 0 && clients[clientFd].getContentLenCopy() > 0)
 						{
 							std::string error = makeError(400, "Bad Request");
 							send(clientFd, error.c_str(), error.size(), 0);

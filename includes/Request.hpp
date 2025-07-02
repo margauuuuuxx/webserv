@@ -16,6 +16,7 @@ private:
 	std::string	_content;
 	std::string	_version;
 	std::map <std::string, std::string> _headers;
+	std::multimap<std::string, std::string> _multiHeaders;
 	std::string _body;
 public:
 	Request(void);
@@ -33,7 +34,6 @@ public:
 	int					assignError(std::string error);
 	void				setContentLen(size_t len);
 	void				setTransferEncoding(bool state);
-	bool				checkDuplicate(void);
 	void				parse(void);
 	void				reset(void);
 };

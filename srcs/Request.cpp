@@ -4,6 +4,33 @@
 Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
 
+const std::string headersArray[] = {
+	"host",
+	"content-length",
+	"content-type",
+	"date",
+	"user-agent",
+	"authorization",
+	"referer",
+	"range",
+	"max-forwards",
+	"cookie",
+	"END_OF_ARRAY"
+};
+
+std::set<std::string> createSet(void) {
+	std::set<std::string> set;
+	size_t max = 0;
+
+	while (headersArray[max] != "END_OF_ARRAY")
+		max++;
+	for (size_t i = 0; i < max; i++)
+		set.insert(headersArray[i]);
+	return (set);
+}
+
+const std::set<std::string> uniqueHeaders = createSet();
+
 /*
 	La fonction vérifie si la string contient uniquement des whitespaces.
 */
@@ -283,30 +310,10 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 	return (1);
 }
 
-bool Request::checkDuplicate()
-{
-	for (std::map<std::string, std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
-	{
-		std::map<std::string, std::string>::iterator it2 = it;
-		it2++;
-		while (it2 != this->_headers.end())
-		{
-			if (it->first == it2->first)
-			{
-				
-			}
-			it2++;
-		}
-		std::cout << "first	:" << it->first << std::endl;
-		std::cout << "second	:" << it->second << std::endl;
-	}
-	return (true);
-}
-
 void Request::parse(void){
 	std::istringstream iss(this->_toParse);
 	std::string line;
-	std::string currentToken;
+	std::string currentKey;
 	bool isBody = false;
 	int i = 0;
 
@@ -346,21 +353,27 @@ void Request::parse(void){
 			if (line.size() > MAX_REQUEST_LINE_SIZE)
 				return ((void)assignError(makeError(413, "Content Too Large")));
 			if (std::isspace(line.at(0)))
-				this->_headers[currentToken].append(line);
+				this->_headers[currentKey].append(line);
 			else
 			{
 				size_t colon = line.find(':');
 				if (colon == std::string::npos)
 					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
-				std::string token = toLower(line, colon);
-				currentToken = token;
+				std::string key = toLower(line, colon);
+				currentKey = key;
 				std::string value = line.substr(colon + 1);
-				// if (!this->_headers[token].empty())
-				// {
-				// 	std::cout << "doublon" << std::endl;
-				// 	return ((void)assignError(makeError(400, "Bad Request doublon")));
-				// }
-				this->_headers[token] = value;
+				std::map<std::string, std::string>::iterator it;
+				if (key != "authorization" && key != "proxy-authorization" && (it = this->_headers.find(key)) == this->_headers.end())
+					this->_headers[key] = value;
+				else
+				{
+					if (key == "authorization" || key == "proxy-authorization")
+						this->_multiHeaders.insert(std::pair<std::string, std::string>(key, value));
+					else if (!uniqueHeaders.count(key))
+						it->second.append(", " + value);
+					else
+						return ((void)assignError(makeError(400, "Bad Request multiple unique header")));
+				}
 			}
 		}
 		else
@@ -371,16 +384,24 @@ void Request::parse(void){
 		}
 		i++;
 	}
-	if (this->checkDuplicate())
-		return ((void)assignError(makeError(400, "Bad Request doublons")));
+	if (!this->_headers.count("host"))
+		return ((void)assignError(makeError(400, "Bad Request pas de host")));
 	if (this->_headers.size() > MAX_HEADERS_SIZE)
 		return ((void)assignError(makeError(413, "Content Too Large")));
-	std::cout << "method	:" << this->_method << std::endl;
-	std::cout << "content	:" << this->_content << std::endl;
-	std::cout << "version	:" << this->_version << std::endl;
+	std::cout << "method:	" << this->_method << std::endl;
+	std::cout << "content:	" << this->_content << std::endl;
+	std::cout << "version:	" << this->_version << std::endl;
+	std::cout << "map:" << std::endl;
 	for (std::map<std::string, std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
 	{
-		std::cout << "first	:" << it->first << std::endl;
-		std::cout << "second	:" << it->second << std::endl;
+		std::cout << "first:	" << it->first << ", ";
+		std::cout << "second:	" << it->second << std::endl;
 	}
+	std::cout << "multimap:" << std::endl;
+	for (std::multimap<std::string, std::string>::iterator it = this->_multiHeaders.begin(); it != this->_multiHeaders.end(); it++)
+	{
+		std::cout << "first:	" << it->first << ", ";
+		std::cout << "second:	" << it->second << std::endl;
+	}
+	std::cout << "Body: " << this->_body << std::endl;
 }
