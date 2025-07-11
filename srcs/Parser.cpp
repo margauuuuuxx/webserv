@@ -11,7 +11,7 @@
 Parser::Parser(){}
 Parser::~Parser(){}
 void Parser::parsefile(const std::string& filename){
-	std::ifstream *file;
+	std::ifstream file;
 	try{
 		file = openfile(filename);
 		tokenizer(file);
