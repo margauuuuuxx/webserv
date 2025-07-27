@@ -9,13 +9,13 @@
 struct Route{
 	std::string location;
 	std::vector<std::string> allow_methods;
-	std::string root;//directory or file where the requested file should be located
+	std::string root;
 	std::vector<std::string> index;
-	bool autoindex;//allow file listing
+	bool autoindex;
 	std::vector<std::string> cgi_extension;
 	std::string cgi_path;
-	bool upload_enable;//alow upload files
-	std::string upload_store;// where upload files should be saved
+	bool upload_enable;
+	std::string upload_store;
 };
 
 class Server{
