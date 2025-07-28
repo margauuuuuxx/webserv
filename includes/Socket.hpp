@@ -1,3 +1,4 @@
+#pragma once
 #include <stdexcept>
 #include <sys/socket.h>
 #include <netinet/in.h>

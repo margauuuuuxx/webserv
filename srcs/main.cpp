@@ -1,18 +1,27 @@
+#include "../includes/Parser.hpp"
 #include "../includes/Poller.hpp"
 #include "../includes/Socket.hpp"
+#include <cstddef>
 #include <iostream>
 #include <string>
 #include <unistd.h>
 #include <cstring>
+#include <map>
+#include <vector>
 
 int main() {
+	Parser parser;
+	parser.parsefile("config.conf");
+	std::vector<Server> servers = parser.getServer();
+	std::vector<Socket> sockets;
+
     try {
         Socket server1(8080);
-        Socket server2(8080);
+        // Socket server2(8080);
         Poller poller;
 
         poller.addFd(server1.getFd(), POLLIN);
-        poller.addFd(server2.getFd(), POLLIN);
+        // poller.addFd(server2.getFd(), POLLIN);
 
         std::cout << "Serveur en écoute sur le port 8080..." << std::endl;
 
