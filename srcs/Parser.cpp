@@ -5,13 +5,16 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+#include <cstdlib>
 
 Parser::Parser(){}
 Parser::~Parser(){}
 void Parser::parsefile(const std::string& filename){
-	std::ifstream file;
 	try{
-		file = openfile(filename);
+		std::ifstream file(filename.c_str());
+		if (!file.is_open()) {
+			throw std::runtime_error("Cannot open config file: " + filename);
+		}
 		tokenizer(file);
 		// printTokens();
 		parser();
@@ -49,13 +52,13 @@ void Parser::cleanComments(std::string& line) const {
 	}
 }
 
-std::ifstream Parser::openfile(const std::string& filename){
-	std::ifstream file(filename);
-	if (!file.is_open()) {
-		throw std::runtime_error("Cannot open config file: " + filename);
-	}
-	return file;
-}
+// std::ifstream Parser::openfile(const std::string& filename){
+// 	std::ifstream file(filename);
+// 	if (!file.is_open()) {
+// 		throw std::runtime_error("Cannot open config file: " + filename);
+// 	}
+// 	return file;
+// }
 
 void Parser::printTokens() const {
     for (size_t i = 0; i < _tokens.size(); i++) {

@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <unistd.h>
+#include "Server.hpp"
 
 class Socket {
 public:
@@ -10,6 +11,7 @@ public:
 	~Socket();
 	int getFd() const;
 	int clientConnect();
+	void addServer(const Server& s);
 
 private:
 	int sockfd;
@@ -19,5 +21,6 @@ private:
 	socklen_t addrlen;
 	socklen_t clientaddrlen;
 	int backlog;
+	Server server;
 	
 };

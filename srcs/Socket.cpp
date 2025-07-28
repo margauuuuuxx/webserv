@@ -5,17 +5,19 @@ Socket::Socket(int port) {
 	if (sockfd < 0) {
 		throw std::runtime_error("error while creating socket");
 	}
+	std::cout << "SOCKFD " << sockfd << std::endl;
 	addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
 	addrlen = sizeof(addr);
-	if (bind(sockfd, (struct sockaddr*)&addr, addrlen)) {
+	if (bind(sockfd, (struct sockaddr*)&addr, addrlen) < 0) {
 		throw std::runtime_error("error with bind");
 	}
-	backlog = 3;
+	this->backlog = 3;
 	if (listen(sockfd, backlog) < 0) {
 		throw std::runtime_error("error with listen");
 	}
+	std::cout << "Socket créé sur le port " << port << " avec fd: " << sockfd << std::endl;
 }
 
 Socket::~Socket() {
@@ -32,4 +34,7 @@ int Socket::clientConnect(){
 		throw std::runtime_error("error with accept");
     }
 	return listenSocketFd;
+}
+void Socket::addServer(const Server& s){
+	this->server = s;
 }
