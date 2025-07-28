@@ -10,6 +10,10 @@
 #include <cstring>
 #include <vector>
 
+std::string handleRequest(char* buffer, Server server){
+	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nHello from server\n";
+}
+
 int main() {
 	Parser parser;
 	parser.parsefile("simplest_config.conf");
@@ -70,7 +74,7 @@ int main() {
 							std::cout << "Requête reçue sur socket liée au port " << sock->getServer().port << std::endl;
 							buffer[bytes] = '\0';
 							std::cout << "Message reçu: " << buffer;
-							std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nHello from server\n";
+							std::string response = handleRequest(buffer, sock->getServer());
 							send(fd, response.c_str(), response.size(), 0);
 						}
 						else {
