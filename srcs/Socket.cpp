@@ -1,6 +1,7 @@
 #include "../includes/Socket.hpp"
 
 Socket::Socket(int port) {
+	listenSocketFd = -1;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);//(domaine, type, protocol)
 	if (sockfd < 0) {
 		throw std::runtime_error("error while creating socket");
@@ -22,7 +23,9 @@ Socket::Socket(int port) {
 
 Socket::~Socket() {
 	close(sockfd);
-	close(listenSocketFd);
+	if (listenSocketFd != -1) {
+		close(listenSocketFd);
+	}
 }
 
 int Socket::getFd() const{
