@@ -3,6 +3,7 @@
 #include "../includes/Socket.hpp"
 #include <cstddef>
 #include <iostream>
+#include <stdexcept>
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -14,10 +15,9 @@ int main() {
 	parser.parsefile("simplest_config.conf");
 	std::vector<Server> servers = parser.getServer();
 	std::vector<Socket*> sockets;
+	std::map<int, Socket*> fdToSocket;
 
 	try {
-		// Socket sock1(8080);
-		// Socket sock2(8181);
 		Poller poller;
 		for (size_t i = 0; i < servers.size() ; i++) {
 			sockets.push_back( new Socket(servers[i].port));
@@ -28,7 +28,6 @@ int main() {
 			poller.addFd(sockets[i]->getFd(), POLLIN);
 			std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
 		}
-
 
 		while (true) {
 			poller.wait(-1);
@@ -45,6 +44,7 @@ int main() {
 							int client_fd = sockets[j]->clientConnect();
 							std::cout << "Nouveau client connecté (fd=" << client_fd << ")" << std::endl;
 							poller.addFd(client_fd, POLLIN);
+							fdToSocket[client_fd] = sockets[j];
 							isListener = true;
 							break;
 						}
@@ -62,11 +62,21 @@ int main() {
 							continue;
 						}
 
-						buffer[bytes] = '\0';
-						std::cout << "Message reçu: " << buffer;
+						//find the correspondant socket to parse the request based on this server and socket
+						std::map<int, Socket*>::iterator it = fdToSocket.find(fd);
+						if (it != fdToSocket.end()) {
+							Socket* sock = it->second;
 
-						std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nHello from server\n";
-						send(fd, response.c_str(), response.size(), 0);
+							std::cout << "Requête reçue sur socket liée au port " << sock->getServer().port << std::endl;
+							buffer[bytes] = '\0';
+							std::cout << "Message reçu: " << buffer;
+							std::string response = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nHello from server\n";
+							send(fd, response.c_str(), response.size(), 0);
+						}
+						else {
+							throw std::runtime_error("didn\'t find the client fd when receved the request");
+						}
+
 					}
 				}
 			}

@@ -6,7 +6,6 @@ Socket::Socket(int port) {
 	if (sockfd < 0) {
 		throw std::runtime_error("error while creating socket");
 	}
-	std::cout << "SOCKFD " << sockfd << std::endl;
 	addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
@@ -40,4 +39,7 @@ int Socket::clientConnect(){
 }
 void Socket::addServer(const Server& s){
 	this->server = s;
+}
+Server Socket::getServer() const{
+	return server;
 }
