@@ -75,7 +75,8 @@ int main() {
 							buffer[bytes] = '\0';
 							std::cout << "Message reçu: " << buffer;
 							std::string response = handleRequest(buffer, sock->getServer());
-							send(fd, response.c_str(), response.size(), 0);
+							if (!response.empty())
+								send(fd, response.c_str(), response.size(), 0);
 						}
 						else {
 							throw std::runtime_error("didn\'t find the client fd when receved the request");
