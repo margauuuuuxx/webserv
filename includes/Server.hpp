@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <iostream>
+#include "Request.hpp"
 
 struct Route{
 	std::string location;
@@ -27,5 +28,6 @@ public:
 	int client_max_body_size;
 	std::vector<Route> routes;
 	void printServerInfos() const;
+	std::map<int, Request> requests;
 };
 

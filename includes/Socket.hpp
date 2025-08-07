@@ -10,7 +10,7 @@ public:
 	Socket(int port);
 	~Socket();
 	int getFd() const;
-	Server getServer() const;
+	Server& getServer();
 	int clientConnect();
 	void addServer(const Server& s);
 

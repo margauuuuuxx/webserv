@@ -1,6 +1,8 @@
 NAME		= webserv 
 
-SRCS 		= srcs/main.cpp srcs/Parser.cpp srcs/Server.cpp srcs/Socket.cpp srcs/Poller.cpp
+SRCS 		= srcs/main.cpp srcs/Parser.cpp srcs/Server.cpp \
+			  srcs/Socket.cpp srcs/Poller.cpp srcs/Request.cpp \
+			  srcs/utils.cpp
 OBJS_DIR	= objs
 INC_DIR		= includes
 OBJS		= $(patsubst srcs/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))

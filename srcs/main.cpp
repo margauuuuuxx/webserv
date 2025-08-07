@@ -10,13 +10,30 @@
 #include <cstring>
 #include <vector>
 
-std::string handleRequest(char* buffer, Server server){
-	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nHello from server\n";
+std::string handleRequest(char* buffer, Server& server, int client_fd){
+
+	Request& request = server.requests[client_fd];  // default-constructed if not already there
+	if (request.setToParse(buffer))
+	{
+		request.parse();
+		std::cout << "SEND:" << std::endl;
+		std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
+		request.reset();
+		return "HTTP/1.1 200 OK\r\nContent-Length: 17\r\n\r\nrequest complete\n";
+		//clients.erase(clientFd);
+		// request.acceptRequest(bytesRead, buffer, clientFd);
+		// hello = getPage(request.getContent());
+		// send(clientFd , hello.c_str() , hello.length(), 0);
+	}
+	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
 }
 
-int main() {
+int main(int argc, char **argv) {
+	if (argc != 2) {
+		return std::cout << "wron number of args" << std::endl, 1;	
+	}
 	Parser parser;
-	parser.parsefile("simplest_config.conf");
+	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
 	std::vector<Socket*> sockets;
 	std::map<int, Socket*> fdToSocket;
@@ -72,16 +89,16 @@ int main() {
 							Socket* sock = it->second;
 
 							std::cout << "Requête reçue sur socket liée au port " << sock->getServer().port << std::endl;
+							std::cout << "Client fd = " << fd << std::endl;
 							buffer[bytes] = '\0';
 							std::cout << "Message reçu: " << buffer;
-							std::string response = handleRequest(buffer, sock->getServer());
+							std::string response = handleRequest(buffer, sock->getServer(), fd);
 							if (!response.empty())
 								send(fd, response.c_str(), response.size(), 0);
 						}
 						else {
 							throw std::runtime_error("didn\'t find the client fd when receved the request");
 						}
-
 					}
 				}
 			}

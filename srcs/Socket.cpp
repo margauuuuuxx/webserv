@@ -40,6 +40,6 @@ int Socket::clientConnect(){
 void Socket::addServer(const Server& s){
 	this->server = s;
 }
-Server Socket::getServer() const{
+Server& Socket::getServer(){
 	return server;
 }
