@@ -1,6 +1,7 @@
 #include "../includes/Parser.hpp"
 #include "../includes/Poller.hpp"
 #include "../includes/Socket.hpp"
+#include "../includes/SocketErray.hpp"
 #include <cstddef>
 #include <iostream>
 #include <stdexcept>
@@ -9,6 +10,9 @@
 #include <unistd.h>
 #include <cstring>
 #include <vector>
+#include <csignal>
+
+volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
 std::string handleRequest(char* buffer, Server& server, int client_fd){
 
@@ -27,7 +31,10 @@ std::string handleRequest(char* buffer, Server& server, int client_fd){
 	}
 	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
 }
-
+void signalHandler(int sig) {
+	(void)sig;
+	stop  = 1; // change the value of the volatile var
+}
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		return std::cout << "wron number of args" << std::endl, 1;	
@@ -35,7 +42,7 @@ int main(int argc, char **argv) {
 	Parser parser;
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
-	std::vector<Socket*> sockets;
+	SocketErray sockets;
 	std::map<int, Socket*> fdToSocket;
 
 	try {
@@ -50,7 +57,9 @@ int main(int argc, char **argv) {
 			std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
 		}
 
-		while (true) {
+		//va faloir gerer les signaux => peut-etre utuliser un pipe || volatile variable
+		signal(SIGINT, signalHandler);
+		while (!stop) {
 			poller.wait(-1);
 			std::vector<struct pollfd>& fds = poller.getFds();
 
@@ -105,13 +114,7 @@ int main(int argc, char **argv) {
 		}
 	} catch (std::exception& e) {
 		std::cerr << "Erreur : " << e.what() << std::endl;
-		for (size_t i = 0; i < sockets.size() ; i++) {
-			delete sockets[i];
-		}
 	}
-
-	for (size_t i = 0; i < sockets.size() ; i++) {
-		delete sockets[i];
-	}
+	std::cout << "===server shutdown===" << std::endl;
 	return 0;
 }
