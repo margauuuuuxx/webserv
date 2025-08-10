@@ -1,4 +1,5 @@
 #include "../includes/Parser.hpp"
+#include "../includes/Response.hpp"
 #include "../includes/Poller.hpp"
 #include "../includes/Socket.hpp"
 #include "../includes/SocketErray.hpp"
@@ -16,14 +17,17 @@ volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière 
 
 std::string handleRequest(char* buffer, Server& server, int client_fd){
 
+	Response res;
 	Request& request = server.requests[client_fd];  // default-constructed if not already there
 	if (request.setToParse(buffer))
 	{
 		request.parse();
 		std::cout << "SEND:" << std::endl;
 		std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
+		res.handleRequest(request, server);
 		request.reset();
-		return "HTTP/1.1 200 OK\r\nContent-Length: 17\r\n\r\nrequest complete\n";
+		return res.getResponse();
+		// return "HTTP/1.1 200 OK\r\nContent-Length: 17\r\n\r\nrequest complete\n";
 		//clients.erase(clientFd);
 		// request.acceptRequest(bytesRead, buffer, clientFd);
 		// hello = getPage(request.getContent());
