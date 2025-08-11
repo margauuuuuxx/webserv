@@ -56,6 +56,7 @@ void Response::handleGET(Request& req, Server& server){
 }
 void Response::handleRequest(Request& req, Server& server){
 	std::string methode = req.getMethod();	
+	std::cout << "===RESPONSE SETUP===" << std::endl;
 	if (methode == "GET") {
 		std::cout << "GET request" << std::endl;
 		handleGET(req, server);	

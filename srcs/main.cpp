@@ -24,6 +24,7 @@ std::string handleRequest(char* buffer, Server& server, int client_fd){
 		request.parse();
 		std::cout << "SEND:" << std::endl;
 		std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
+		std::cout << "content: " << request.getContent() << std::endl;
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();
@@ -35,10 +36,12 @@ std::string handleRequest(char* buffer, Server& server, int client_fd){
 	}
 	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
 }
+
 void signalHandler(int sig) {
 	(void)sig;
 	stop  = 1; // change the value of the volatile var
 }
+
 int main(int argc, char **argv) {
 	if (argc != 2) {
 		return std::cout << "wron number of args" << std::endl, 1;	
@@ -101,6 +104,7 @@ int main(int argc, char **argv) {
 						if (it != fdToSocket.end()) {
 							Socket* sock = it->second;
 
+							std::cout << "===REQUETE===" << std::endl;
 							std::cout << "Requête reçue sur socket liée au port " << sock->getServer().port << std::endl;
 							std::cout << "Client fd = " << fd << std::endl;
 							buffer[bytes] = '\0';
