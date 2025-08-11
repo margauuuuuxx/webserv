@@ -55,13 +55,16 @@ int main(int argc, char **argv) {
 	try {
 		Poller poller;
 		for (size_t i = 0; i < servers.size() ; i++) {
-			sockets.push_back( new Socket(servers[i].port));
-		}
-
-		for (size_t i = 0; i < servers.size() ; i++) {
-			sockets[i]->addServer(servers[i]);
-			poller.addFd(sockets[i]->getFd(), POLLIN);
-			std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
+			try {
+				sockets.push_back( new Socket(servers[i].port));
+				sockets[i]->addServer(servers[i]);
+				poller.addFd(sockets[i]->getFd(), POLLIN);
+				std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
+			}
+			catch (const std::exception& e) {
+				std::cout << "Can\'t create serveur on port " << servers[i].port << std::endl;
+				std::cout << "because: " << e.what() << std::endl;
+			}
 		}
 
 		//va faloir gerer les signaux => peut-etre utuliser un pipe || volatile variable
