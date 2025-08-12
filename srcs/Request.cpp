@@ -1,5 +1,9 @@
 #include "../includes/includes.hpp"
 
+/*
+	This class is responsible for building the appropriate HTTP response based on the parsed Request object and the Server config.
+*/
+
 Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
 

@@ -1,5 +1,13 @@
 #include "../includes/includes.hpp"
 
+/*
+	This class is mostly a data structure.
+	It holds all the configuration for a single virtual server.
+	--> port, host, error pages & defined routes
+
+	The route struct defines how the server should behave for a specific URL path.
+*/
+
 void Server::printServerInfos() const {
 	std::cout << "=== SERVER CONFIGURATION ===" << std::endl;
 	std::cout << "Host: " << host << std::endl;

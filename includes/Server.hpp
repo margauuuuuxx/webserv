@@ -1,11 +1,6 @@
 #pragma once
 
-#include <string>
-#include <vector>
-#include <map>
-#include <vector>
-#include <iostream>
-#include "Request.hpp"
+#include "includes.hpp"
 
 struct Route{
 	std::string location;
@@ -30,4 +25,3 @@ public:
 	void printServerInfos() const;
 	std::map<int, Request> requests;
 };
-

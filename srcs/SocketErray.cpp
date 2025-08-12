@@ -1,5 +1,9 @@
 #include "../includes/includes.hpp"
 
+/*
+	This class is responsible for halding pointers to all the Socket objects created by the server.
+*/
+
 SocketErray::SocketErray(){}
 SocketErray::~SocketErray(){
 	std::cout << "destructor of the erray" << std::endl;

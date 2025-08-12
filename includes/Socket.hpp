@@ -1,9 +1,6 @@
 #pragma once
-#include <stdexcept>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
-#include "Server.hpp"
+
+#include "includes.hpp"
 
 class Socket {
 public:
@@ -23,5 +20,4 @@ private:
 	socklen_t clientaddrlen;
 	int backlog;
 	Server server;
-	
 };

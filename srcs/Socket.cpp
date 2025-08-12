@@ -1,5 +1,9 @@
 #include "../includes/includes.hpp"
 
+/*
+	This class is responsible for creating a listening socket for a given Server config.
+*/
+
 Socket::Socket(int port) {
 	listenSocketFd = -1;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);//(domaine, type, protocol)

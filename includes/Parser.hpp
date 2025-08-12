@@ -1,11 +1,6 @@
 #pragma once
 
-#include <vector>
-#include <iostream>
-#include <exception>
-#include <fstream>
-#include <sstream>
-#include "Server.hpp"
+#include "includes.hpp"
 
 class Parser{
 public:
@@ -49,4 +44,3 @@ private:
 
 	void printServer() const;
 };
-

@@ -61,6 +61,17 @@ void Response::handleRequest(Request& req, Server& server){
 		std::cout << "GET request" << std::endl;
 		handleGET(req, server);	
 	}
+	// ICIIIIIII
+	/*
+		POST:
+			1. reads the date from the request body
+			2. identify what to do with it 
+			3. send back a response with status code 
+		DELETE:
+			1. identify the resource to be deleted
+			2. attempts to delete it
+			2. sends back a response with status code
+	*/
 }
 
 #include <map>

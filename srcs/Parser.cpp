@@ -1,6 +1,11 @@
 
 #include "../includes/includes.hpp"
 
+/*
+	This class is responsible for reading the config file.
+	it tokenizes the file, parses it and uses that information to configure one or more Server objects.
+*/
+
 Parser::Parser(){}
 Parser::~Parser(){}
 void Parser::parsefile(const std::string& filename){

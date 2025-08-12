@@ -1,7 +1,6 @@
 #pragma once
-#include <string>
-#include "Server.hpp"
-#include "Request.hpp"
+
+#include "includes.hpp"
 
 class Response{
 public:
