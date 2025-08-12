@@ -11,8 +11,8 @@ SocketArray::~SocketArray(){
 		delete _sockets[i];
 	}
 }
-void SocketArray::push_back(Socket* s){
-	_sockets.push_back(s);
+void SocketArray::pushBack(Socket* s){
+	_sockets.pushBack(s);
 }
 Socket* SocketArray::operator [] (size_t i){
 	return _sockets[i];

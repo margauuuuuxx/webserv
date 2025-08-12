@@ -296,9 +296,9 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 			if (!this->_waitingForData)
 			{
 				for (size_t i = 0; i != this->_contentLenCopy; i++)
-					this->_toParse.push_back(buffer.at(i));
-				this->_toParse.push_back('\r');
-				this->_toParse.push_back('\n');
+					this->_toParse.pushBack(buffer.at(i));
+				this->_toParse.pushBack('\r');
+				this->_toParse.pushBack('\n');
 			}
 			else
 				this->_toParse.append(buffer);
@@ -393,7 +393,7 @@ void Request::parse(void){
 					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
 				std::string key = toLower(line, colon);
 				currentKey = key;
-				std::string value = ft_strtrim(line.substr(colon + 1));
+				std::string value = ftStrtrim(line.substr(colon + 1));
 				std::map<std::string, std::string>::iterator it;
 				if (key == "authorization" || key == "proxy-authorization")
 					this->_multiHeaders.insert(std::pair<std::string, std::string>(key, value));

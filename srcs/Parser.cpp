@@ -39,7 +39,7 @@ void Parser::tokenizer(std::ifstream& file){
 		std::istringstream iss(line);
 		std::string token;
 		while (iss >> token) {
-			_tokens.push_back(token);
+			_tokens.pushBack(token);
 		}
 	}
 }
@@ -94,7 +94,7 @@ void Parser::parseServer(){
 	}
 	if (_tokens[_i] != "}")
 		throw std::runtime_error("unexpected end of file missing } for server dirrective");
-	_servers.push_back(server);
+	_servers.pushBack(server);
 
 }
 
@@ -104,7 +104,7 @@ void Parser::parseServerElements(Server& server){
 		"host",
 		"server_name",
 		"error_page",
-		"client_max_body_size",
+		"clientMaxBodySize",
 		"location"
 	};
 	void (Parser::*f[])(Server&) = {
@@ -152,7 +152,7 @@ void Parser::parseHost(Server& server){
 void Parser::parseServerName(Server& server){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		server.server_names.push_back(_tokens[_i]);
+		server.serverNames.pushBack(_tokens[_i]);
 		_i++;
 	}
 }
@@ -174,7 +174,7 @@ void Parser::parseErrorPage(Server& server){
             if (error_code < 100 || error_code > 599) {
                 throw std::runtime_error("invalid HTTP error code: " + _tokens[_i]);
             }
-            error_codes.push_back(error_code);
+            error_codes.pushBack(error_code);
         } else {
             // Not a valid integer - assume it's the file path
             error_page_path = _tokens[_i];
@@ -186,13 +186,13 @@ void Parser::parseErrorPage(Server& server){
 	if (_tokens[_i] != ";")
 		throw std::runtime_error("unexpected token" + _tokens[_i]);
 	for (std::vector<int>::iterator i = error_codes.begin(); i < error_codes.end(); i++) {
-		server.error_pages[*i] = error_page_path;
+		server.errorPages[*i] = error_page_path;
 	}
 }
 
 void Parser::parseClientMaxBodySize(Server& server){
 	std::istringstream iss(_tokens[++_i]);
-    iss >> server.client_max_body_size;
+    iss >> server.clientMaxBodySize;
     if (iss.fail()) {
         throw std::runtime_error(_tokens[_i] + " not a valid client max body size");
     }
@@ -213,19 +213,19 @@ void Parser::parseRoutes(Server& server){
 	}
 	if (_tokens[_i] != "}")
 		throw std::runtime_error("unexpected end of file missing } for route dirrective");
-	server.routes.push_back(route);
+	server.routes.pushBack(route);
 }
 
 void Parser::parseRouteElements(Route& route){
 	std::string route_tokens[] = {
 		"root",
 		"index",
-		"allow_methods",
+		"allowedMethods",
 		"autoindex",
-		"upload_store",
-		"upload_enable",
-		"cgi_extension",
-		"cgi_path",
+		"uploadStore",
+		"uploadEnabled",
+		"cgiExtension",
+		"cgiPath",
 	};
 
 	void (Parser::*f[])(Route&) = {
@@ -256,7 +256,7 @@ void Parser::parseRoot(Route& route){
 void Parser::parseIndex(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		route.index.push_back(_tokens[_i]);
+		route.index.pushBack(_tokens[_i]);
 		_i++;
 	}
 }
@@ -264,7 +264,7 @@ void Parser::parseAllowMethods(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
 		if (_tokens[_i] == "GET" || _tokens[_i] == "POST" || _tokens[_i] == "DELETE")
-			route.allow_methods.push_back(_tokens[_i]);
+			route.allowedMethods.pushBack(_tokens[_i]);
 		else
 		 throw std::runtime_error("not a valide methode: " + _tokens[_i]);
 		_i++;
@@ -283,16 +283,16 @@ void Parser::parseAutoIndex(Route& route){
 		throw std::runtime_error("invalide value " + _tokens[_i] + " for autoindex it must be \"on\" or \"off\"");
 }
 void Parser::parseUploadStore(Route& route){
-	route.upload_store = _tokens[++_i];
+	route.uploadStore = _tokens[++_i];
 	if (_tokens[++_i] != ";")
 		throw std::runtime_error("unexpected token" + _tokens[_i] + " at root");
 }
 void Parser::parseUploadEnable(Route& route){
 	++_i;
 	if (_tokens[_i] == "on")
-		route.upload_enable = true;
+		route.uploadEnabled = true;
 	else if (_tokens[_i] == "off")
-		route.upload_enable  = false;
+		route.uploadEnabled  = false;
 	else {
 		throw std::runtime_error("not a valide entry for autoindex: " + _tokens[_i]);
 	}
@@ -302,13 +302,13 @@ void Parser::parseUploadEnable(Route& route){
 void Parser::parseCgiExtention(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		route.cgi_extension.push_back(_tokens[_i]);
+		route.cgiExtension.pushBack(_tokens[_i]);
 		_i++;
 	}
 }
 
 void Parser::parseCgiPath(Route& route){
-	route.cgi_path = _tokens[++_i];
+	route.cgiPath = _tokens[++_i];
 	if (_tokens[++_i] != ";")
 		throw std::runtime_error("unexpected token" + _tokens[_i] + " at root");
 }

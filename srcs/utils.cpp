@@ -48,7 +48,7 @@ static int	count_char(long a)
 	return (count);
 }
 
-char	*ft_itoa(int n)
+char	*ftItoa(int n)
 {
 	char	*num;
 	int		i;
@@ -101,14 +101,14 @@ std::string toLower(std::string line, size_t end)
 
 	while (it != line.end() && end)
 	{
-		lower.push_back((char)std::tolower(*it));
+		lower.pushBack((char)std::tolower(*it));
 		it++;
 		end--;
 	}
 	return (lower);
 }
 
-std::string ft_strtrim(std::string s)
+std::string ftStrtrim(std::string s)
 {
 	size_t start = 0;
 	std::string::iterator it = s.begin();

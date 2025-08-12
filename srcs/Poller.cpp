@@ -18,7 +18,7 @@ void Poller::addFd(int fd, short events) {
     pfd.fd = fd;
     pfd.events = events;
     pfd.revents = 0;
-    _fds.push_back(pfd);
+    _fds.pushBack(pfd);
 }
 
 void Poller::removeFd(int fd) {
