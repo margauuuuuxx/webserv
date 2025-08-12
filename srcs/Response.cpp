@@ -1,10 +1,41 @@
 #include "../includes/includes.hpp"
 
+/*
+	This class is responsible for building the appropriate HTPP response for a given request.
+*/
+
 Response::Response() {}
 
 Response::~Response() {}
 
-void	Response::handleGET(Request& req, Server& server) {
+static void	Response::buildErrorResponse(int code, Request& req, Server& server)
+{
+	this->_statusCode = code;
+	this->_httpVersion = req.getVersion();
+
+	if (server.errorPages(code)) { // CHECK THIS LINE NOT SURE HOW IT WORKS 
+		std::string errorPagePath = server.errorPage[code]; // CHECK HOW THE PATH WORKS (I.E. ROOTING PATH)
+		std::ifstream file(errorPagePath.c_str());
+		if (file.is_open())
+		{
+			std::string line;
+			while (std::getline(file, line)) {
+				this->_content += line; // QUID CONTENT SIZE ??
+			}
+			file.close();
+		}
+	}
+
+	if (this->_content.empty())
+	{
+		std::string errorMessage = "An error occured ...";
+		if (this->_statusCode == 405)
+			errorMessage = "Method not allowed ...";
+	
+	}
+}
+
+static void	Response::handleGET(Request& req, Server& server) {
 	std::string location = req.getContent();
 	Route* route = NULL;
 	std::cout << "location: " << location << std::endl;
@@ -57,25 +88,46 @@ void	Response::handleGET(Request& req, Server& server) {
 	
 }
 
-void	Response::handleRequest(Request& req, Server& server)
+/*
+	POST:
+		1. reads the date from the request body
+		2. identify what to do with it 
+		3. send back a response with status code 
+*/
+static void	Response::handlePOST(Request& req, Server& server)
 {
-	std::string methode = req.getMethod();	
-	std::cout << "===RESPONSE SETUP===" << std::endl;
-	if (methode == "GET") {
-		std::cout << "GET request" << std::endl;
-		handleGET(req, server);	
-	}
-	// ICIIIIIII
-	/*
-		POST:
-			1. reads the date from the request body
-			2. identify what to do with it 
-			3. send back a response with status code 
+
+}
+
+/*
 		DELETE:
 			1. identify the resource to be deleted
 			2. attempts to delete it
 			2. sends back a response with status code
-	*/
+*/
+static void	Response::handleDELETE(Request& req, Server& server)
+{
+
+}
+
+typedef void	(*HandlerFct)(const Request&, Server&);
+void	Response::handleRequest(Request& req, Server& server)
+{
+	std::string method = req.getMethod();	
+	this->_httpVersion = req.getVersion();
+
+	std::cout << "===RESPONSE SETUP===" << std::endl;
+
+	std::map<std::string, HandlerFct> handlers;
+	handlers["GET"] = &handleGET;
+	handlers["POST"] = &handlePOST;
+	handlers["DELETE"] = &handleDELETE;
+
+	std::map<std::string, HandlerFct>::iterator it = handlers.find(method);
+	if (it != handlers.end())
+		it->second(req, server);
+	else
+		this->_statusCode = 405;
 }
 
 std::string	Response::getResponse() {

@@ -8,9 +8,10 @@ public:
 	~Response();
 
 	void		handleRequest(Request& req, Server& server);
-	void		handleGET(Request& req, Server& server);
-	void		handlePOST(Request& req, Server& server);
-	void		handleDELETE(Request& req, Server& server);
+	static void	handleGET(Request& req, Server& server);
+	static void	handlePOST(Request& req, Server& server);
+	static void	handleDELETE(Request& req, Server& server);
+	static void	buildErrorResponse(int code, Request& req, Server& server);
 	std::string	getResponse();
 
 private:
