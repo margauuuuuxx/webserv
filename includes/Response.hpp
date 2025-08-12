@@ -1,30 +1,18 @@
-#pragma once 
-
-#include "includes.hpp"
+#pragma once
+#include <string>
+#include "Server.hpp"
 #include "Request.hpp"
-#include "Config.hpp"
 
-/*
-    This class is responsible for generating HTTPS responses :
-        - based on requests and server state
-        - handles file serving/errors/headings
-*/
-
-class Request;
-class Config;
-
-class Response
-{
-    private:
-        Response();
-        Response(const Response &other);
-        Response& operator=(const Response &other);
-		const Request &_req;
-		std::string _response;
-
-    public:
-        Response(const Request& req);
-        ~Response();
-
-		std::string const &getResponse() const;
+class Response{
+public:
+	Response();
+	~Response();
+	void handleRequest(Request& req, Server& server);
+	void handleGET(Request& req, Server& server);
+	std::string getResponse();
+private:
+	std::string _content;
+	std::string _http_version;
+	size_t _content_size;
+	size_t _status_code;
 };

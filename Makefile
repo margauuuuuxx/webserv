@@ -1,17 +1,33 @@
-NAME	=	webserv
-FLAGS	=	-Wall -Wextra -Werror -std=c++98
-FILES	=	$(wildcard srcs/*.cpp)
+NAME		= webserv 
 
-all : ${NAME}
+SRCS 		= srcs/main.cpp srcs/Parser.cpp srcs/Server.cpp \
+			  srcs/Socket.cpp srcs/Poller.cpp srcs/Request.cpp \
+			  srcs/utils.cpp srcs/SocketErray.cpp srcs/Response.cpp
+OBJS_DIR	= objs
+INC_DIR		= includes
+OBJS		= $(patsubst srcs/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))
+ FLAGS 		= -std=c++98 #-Wall -Wextra -Werror  
+INCLUDES	= -I$(INC_DIR)
 
-${NAME} : ${FILES}
-	@c++ ${FLAGS} ${FILES} -o ${NAME}
+RED   		= \033[1;38;5;196m
+PINK  		= \033[1;38;5;213m
+NC			= \033[0m
+FACE		= 😏
 
-clean :
-	@rm -rf ${NAME}
+all: $(NAME)
 
-fclean : clean
+$(NAME): $(OBJS)
+	@c++ $(FLAGS) $(OBJS) -o $(NAME)
+	@printf "\r${PINK}Compiiiiiling ${FACE} : [${RED}%-50s${RED}${PINK}] %d/%d${NC}" $$(printf "#%.0s" $$(seq 1 $$(expr $$(find $(OBJS_DIR) -name '*.o' | wc -l) \* 50 / $(words $(SRCS))))) $$(find $(OBJS_DIR) -name '*.o' | wc -l) $(words $(SRCS))
 
-re : fclean all
+$(OBJS_DIR)/%.o: srcs/%.cpp
+	@mkdir -p $(OBJS_DIR)
+	@c++ $(FLAGS) $(INCLUDES) -c $< -o $@
 
-.PHONY:	all clean fclean re
+clean:
+	@rm -rf $(OBJS_DIR)
+
+fclean: clean
+	@rm -f $(NAME)
+
+re: fclean all
