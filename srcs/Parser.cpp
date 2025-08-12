@@ -1,11 +1,5 @@
 
-#include "../includes/Parser.hpp"
-#include <cstddef>
-#include <fstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
-#include <cstdlib>
+#include "../includes/includes.hpp"
 
 Parser::Parser(){}
 Parser::~Parser(){}

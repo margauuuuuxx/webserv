@@ -1,4 +1,5 @@
-#include "../includes/Server.hpp"
+#include "../includes/includes.hpp"
+
 void Server::printServerInfos() const {
 	std::cout << "=== SERVER CONFIGURATION ===" << std::endl;
 	std::cout << "Host: " << host << std::endl;

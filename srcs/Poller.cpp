@@ -1,7 +1,4 @@
-#include "../includes/Poller.hpp"
-#include <unistd.h>
-#include <stdexcept>
-#include <algorithm>
+#include "../includes/includes.hpp"
 
 Poller::Poller() {}
 

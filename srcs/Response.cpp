@@ -1,5 +1,5 @@
-#include "../includes/Response.hpp"
-#include <map>
+#include "../includes/includes.hpp"
+
 Response::Response(){}
 Response::~Response(){}
 void Response::handleGET(Request& req, Server& server){

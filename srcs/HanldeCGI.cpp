@@ -1,5 +1,4 @@
-#include <iostream>
-#include <unistd.h>
+#include "../includes.hpp"
 
 std::string handleCgi(const std::string& filePath,const std::string& body ){
 	int pipefd[2];

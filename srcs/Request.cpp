@@ -1,4 +1,3 @@
-#include "../includes/Request.hpp"
 #include "../includes/includes.hpp"
 
 Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}

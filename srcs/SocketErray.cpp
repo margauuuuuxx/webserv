@@ -1,4 +1,5 @@
-#include "../includes/SocketErray.hpp"
+#include "../includes/includes.hpp"
+
 SocketErray::SocketErray(){}
 SocketErray::~SocketErray(){
 	std::cout << "destructor of the erray" << std::endl;

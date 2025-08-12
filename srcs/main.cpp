@@ -1,17 +1,4 @@
-#include "../includes/Parser.hpp"
-#include "../includes/Response.hpp"
-#include "../includes/Poller.hpp"
-#include "../includes/Socket.hpp"
-#include "../includes/SocketErray.hpp"
-#include <cstddef>
-#include <iostream>
-#include <stdexcept>
-#include <string>
-#include <sys/socket.h>
-#include <unistd.h>
-#include <cstring>
-#include <vector>
-#include <csignal>
+#include "../includes/includes.hpp"
 
 volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
