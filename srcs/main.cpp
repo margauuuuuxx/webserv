@@ -36,7 +36,7 @@ int main(int argc, char **argv) {
 	Parser parser;
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
-	SocketErray sockets;
+	SocketArray sockets;
 	std::map<int, Socket*> fdToSocket;
 
 	try {

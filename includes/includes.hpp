@@ -39,5 +39,5 @@
 #include "Response.hpp"
 #include "Server.hpp"
 #include "Socket.hpp"
-#include "SocketErray.hpp"
+#include "SocketArray.hpp"
 #include "utils.hpp"

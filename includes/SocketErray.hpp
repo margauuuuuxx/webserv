@@ -2,10 +2,10 @@
 
 #include "includes.hpp"
 
-class SocketErray{
+class SocketArray{
 public:
-	SocketErray();
-	~SocketErray();
+	SocketArray();
+	~SocketArray();
 	void push_back(Socket* s);
 	Socket* operator [] (size_t i);
 	size_t size() const;
