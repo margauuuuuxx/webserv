@@ -28,12 +28,8 @@ std::string handleRequest(char* buffer, Server& server, int client_fd){
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();
-		// return "HTTP/1.1 200 OK\r\nContent-Length: 17\r\n\r\nrequest complete\n";
-		//clients.erase(clientFd);
-		// request.acceptRequest(bytesRead, buffer, clientFd);
-		// hello = getPage(request.getContent());
-		// send(clientFd , hello.c_str() , hello.length(), 0);
 	}
+
 	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
 }
 
@@ -44,31 +40,36 @@ void signalHandler(int sig) {
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
-		return std::cout << "wron number of args" << std::endl, 1;	
+		std::cout << "wrong number of args" << std::endl;
+		return 1;
 	}
+
 	Parser parser;
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
 	SocketErray sockets;
 	std::map<int, Socket*> fdToSocket;
+	std::map<int, std::string> pendingResponses; // stocke les réponses en attente
 
 	try {
 		Poller poller;
-		for (size_t i = 0; i < servers.size() ; i++) {
+
+		// Création des sockets serveurs
+		for (size_t i = 0; i < servers.size(); i++) {
 			try {
-				sockets.push_back( new Socket(servers[i].port));
+				sockets.push_back(new Socket(servers[i].port));
 				sockets[i]->addServer(servers[i]);
 				poller.addFd(sockets[i]->getFd(), POLLIN);
 				std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
 			}
 			catch (const std::exception& e) {
-				std::cout << "Can\'t create serveur on port " << servers[i].port << std::endl;
+				std::cout << "Can't create server on port " << servers[i].port << std::endl;
 				std::cout << "because: " << e.what() << std::endl;
 			}
 		}
 
-		//va faloir gerer les signaux => peut-etre utuliser un pipe || volatile variable
 		signal(SIGINT, signalHandler);
+
 		while (!stop) {
 			poller.wait(-1);
 			std::vector<struct pollfd>& fds = poller.getFds();
@@ -76,9 +77,11 @@ int main(int argc, char **argv) {
 			for (size_t i = 0; i < fds.size(); ++i) {
 				int fd = fds[i].fd;
 
+				// ---- Nouveaux clients ou données à lire ----
 				if (fds[i].revents & POLLIN) {
 					bool isListener = false;
 
+					// Vérifie si c'est un socket serveur
 					for (size_t j = 0; j < sockets.size(); ++j) {
 						if (fd == sockets[j]->getFd()) {
 							int client_fd = sockets[j]->clientConnect();
@@ -98,34 +101,59 @@ int main(int argc, char **argv) {
 							std::cout << "Client déconnecté (fd=" << fd << ")" << std::endl;
 							close(fd);
 							poller.removeFd(fd);
-							i = -1; // recommencer la boucle, car fds a changé
+							fdToSocket.erase(fd);
+							pendingResponses.erase(fd);
 							continue;
 						}
 
-						//find the correspondant socket to parse the request based on this server and socket
+						// Trouver le socket associé
 						std::map<int, Socket*>::iterator it = fdToSocket.find(fd);
 						if (it != fdToSocket.end()) {
 							Socket* sock = it->second;
 
-							std::cout << "===REQUETE===" << std::endl;
-							std::cout << "Requête reçue sur socket liée au port " << sock->getServer().port << std::endl;
-							std::cout << "Client fd = " << fd << std::endl;
 							buffer[bytes] = '\0';
+							std::cout << "===REQUETE===" << std::endl;
+							std::cout << "Requête reçue sur port " << sock->getServer().port << std::endl;
+							std::cout << "Client fd = " << fd << std::endl;
 							std::cout << "Message reçu: " << buffer;
+
 							std::string response = handleRequest(buffer, sock->getServer(), fd);
-							if (!response.empty())
-								send(fd, response.c_str(), response.size(), 0);
+							if (!response.empty()) {
+								pendingResponses[fd] = response;
+								poller.modifyFd(fd, POLLOUT); // passe en écriture
+							}
 						}
 						else {
-							throw std::runtime_error("didn\'t find the client fd when receved the request");
+							throw std::runtime_error("Client fd non trouvé lors de la réception");
+						}
+					}
+				}
+
+				// ---- Données à envoyer ----
+				else if (fds[i].revents & POLLOUT) {
+					std::map<int, std::string>::iterator it = pendingResponses.find(fd);
+					if (it != pendingResponses.end()) {
+						std::string &data = it->second;
+						ssize_t sent = send(fd, data.c_str(), data.size(), 0);
+
+						if (sent > 0) {
+							data.erase(0, sent); // Supprime la partie envoyée
+						}
+
+						// Si tout est envoyé, retour en lecture
+						if (data.empty()) {
+							pendingResponses.erase(fd);
+							poller.modifyFd(fd, POLLIN);
 						}
 					}
 				}
 			}
 		}
-	} catch (std::exception& e) {
+	}
+	catch (std::exception& e) {
 		std::cerr << "Erreur : " << e.what() << std::endl;
 	}
-	std::cout << "===server shutdown===" << std::endl;
+
+	std::cout << "=== server shutdown ===" << std::endl;
 	return 0;
 }

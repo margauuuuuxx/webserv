@@ -1,0 +1,2 @@
+handle connection timeout if keep alive disconnect if connection type = close;
+- location patern parsing -> bigin by "/"

@@ -3,13 +3,19 @@
 #include "Server.hpp"
 #include "Request.hpp"
 
+struct location{
+	Route *route;
+	std::string filename;
+};
 class Response{
 public:
 	Response();
 	~Response();
 	void handleRequest(Request& req, Server& server);
-	void handleGET(Request& req, Server& server);
+	void handleGET(Request& req, Server& server, struct location& location);
 	std::string getResponse();
+	bool startsWith(const std::string &str, const std::string &prefix);
+	struct location getLocationAndFilename(Request& req, Server& server);
 private:
 	std::string _content;
 	std::string _http_version;

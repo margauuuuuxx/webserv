@@ -12,6 +12,7 @@ public:
     void addFd(int fd, short events);
     void removeFd(int fd);
     int wait(int timeout);
+	void modifyFd(int fd, short events);
     std::vector<struct pollfd>& getFds();
 
 private:

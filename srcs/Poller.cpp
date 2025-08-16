@@ -38,3 +38,12 @@ int Poller::wait(int timeout) {
 std::vector<struct pollfd>& Poller::getFds() {
     return _fds;
 }
+void Poller::modifyFd(int fd, short events) {
+    for (size_t i = 0; i < _fds.size(); ++i) {
+        if (_fds[i].fd == fd) {
+            _fds[i].events = events; // change les événements surveillés
+            return;
+        }
+    }
+    throw std::runtime_error("modifyFd: FD not found");
+}
