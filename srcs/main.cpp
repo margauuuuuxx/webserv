@@ -15,7 +15,7 @@
 
 volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
-std::string handleRequest(char* buffer, Server& server, int client_fd){
+std::vector<char> handleRequest(char* buffer, Server& server, int client_fd){
 
 	Response res;
 	Request& request = server.requests[client_fd];  // default-constructed if not already there
@@ -30,7 +30,10 @@ std::string handleRequest(char* buffer, Server& server, int client_fd){
 		return res.getResponse();
 	}
 
-	return "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
+	std::string s = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
+	std::vector<char> text(s.begin(), s.end());
+	text.push_back('\0');
+	return text;
 }
 
 void signalHandler(int sig) {
@@ -49,13 +52,14 @@ int main(int argc, char **argv) {
 	std::vector<Server> servers = parser.getServer();
 	SocketErray sockets;
 	std::map<int, Socket*> fdToSocket;
-	std::map<int, std::string> pendingResponses; // stocke les réponses en attente
+	std::map<int, std::vector<char> > pendingResponses; // stocke les réponses en attente
 
 	try {
 		Poller poller;
 
 		// Création des sockets serveurs
 		for (size_t i = 0; i < servers.size(); i++) {
+			std::cout << "i: " << i << std::endl;
 			try {
 				sockets.push_back(new Socket(servers[i].port));
 				sockets[i]->addServer(servers[i]);
@@ -66,6 +70,11 @@ int main(int argc, char **argv) {
 				std::cout << "Can't create server on port " << servers[i].port << std::endl;
 				std::cout << "because: " << e.what() << std::endl;
 			}
+		}
+		std::cout << "size " << sockets.size() << std::endl;
+		if (sockets.size() == 0){
+			std::cout << "Couldn't create any server" << std::endl;
+			return 1;
 		}
 
 		signal(SIGINT, signalHandler);
@@ -117,7 +126,7 @@ int main(int argc, char **argv) {
 							std::cout << "Client fd = " << fd << std::endl;
 							std::cout << "Message reçu: " << buffer;
 
-							std::string response = handleRequest(buffer, sock->getServer(), fd);
+							std::vector<char> response = handleRequest(buffer, sock->getServer(), fd);
 							if (!response.empty()) {
 								pendingResponses[fd] = response;
 								poller.modifyFd(fd, POLLOUT); // passe en écriture
@@ -131,13 +140,13 @@ int main(int argc, char **argv) {
 
 				// ---- Données à envoyer ----
 				else if (fds[i].revents & POLLOUT) {
-					std::map<int, std::string>::iterator it = pendingResponses.find(fd);
+					std::map<int, std::vector<char> >::iterator it = pendingResponses.find(fd);
 					if (it != pendingResponses.end()) {
-						std::string &data = it->second;
-						ssize_t sent = send(fd, data.c_str(), data.size(), 0);
+						std::vector<char> &data = it->second;
+						ssize_t sent = send(fd, &data[0], data.size(), 0);
 
 						if (sent > 0) {
-							data.erase(0, sent); // Supprime la partie envoyée
+							data.erase(data.begin(), data.begin() + sent); // Supprime la partie envoyée
 						}
 
 						// Si tout est envoyé, retour en lecture

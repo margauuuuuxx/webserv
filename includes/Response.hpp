@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 #include "Server.hpp"
 #include "Request.hpp"
 
@@ -13,11 +14,13 @@ public:
 	~Response();
 	void handleRequest(Request& req, Server& server);
 	void handleGET(Request& req, Server& server, struct location& location);
-	std::string getResponse();
+	std::vector<char> getResponse();
 	bool startsWith(const std::string &str, const std::string &prefix);
 	struct location getLocationAndFilename(Request& req, Server& server);
+	void setContentType(std::string file);
 private:
-	std::string _content;
+	std::vector<char> _content;
+	std::string _content_type;
 	std::string _http_version;
 	size_t _content_size;
 	size_t _status_code;
