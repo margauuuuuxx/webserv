@@ -1,7 +1,68 @@
 #include "../includes/Response.hpp"
+#include <dirent.h>   // opendir, readdir, closedir
+#include <sys/types.h>
+#include <string>
+#include <sstream>
+#include <iostream>
 #include <map>
 Response::Response(){}
 Response::~Response(){}
+
+std::string Response::generateDirectoryListing(const std::string &path, const std::string &uri) {
+    DIR *dir;
+    struct dirent *entry;
+    std::ostringstream html;
+
+    // Début de la page HTML
+    html << "<!DOCTYPE html>\n<html>\n<head>\n";
+    html << "<meta charset=\"UTF-8\">\n<title>Index of " << uri << "</title>\n";
+    html << "</head>\n<body>\n";
+    html << "<h1>Index of " << uri << "</h1>\n<ul>\n";
+
+    // Ouvrir le dossier
+    dir = opendir(path.c_str());
+    if (!dir) {
+        return "<html><body><h1>403 Forbidden</h1></body></html>";
+    }
+
+    // Lire chaque fichier
+    while ((entry = readdir(dir)) != NULL) {
+        std::string name = entry->d_name;
+
+        // Ignorer "." et ".."
+        if (name == "." || name == "..")
+            continue;
+
+        // Ajouter un lien vers le fichier
+        html << "<li><a href=\"" << uri;
+        if (uri[uri.size() - 1] != '/')
+            html << "/";
+        html << name << "\">" << name << "</a></li>\n";
+    }
+
+    closedir(dir);
+
+    // Fin de la page HTML
+    html << "</ul>\n</body>\n</html>\n";
+
+    return html.str();
+}
+std::string Response::getHTTPDate() {
+    // Obtenir l'heure actuelle
+    std::time_t now = std::time(NULL);
+
+    // Convertir en structure GMT (UTC)
+    std::tm *gmt = std::gmtime(&now);
+
+    // Tampon pour stocker la date formatée
+    char buffer[100];
+
+    // Format RFC 1123 pour HTTP
+    // Ex: "Tue, 26 Aug 2025 15:30:00 GMT"
+    std::strftime(buffer, sizeof(buffer), "%a, %d %b %Y %H:%M:%S GMT", gmt);
+
+    return std::string(buffer);
+}
 
 void Response::setContentType(std::string filename){
 	this->_content_type = "application/octet-stream";
@@ -15,6 +76,7 @@ void Response::setContentType(std::string filename){
 		_content_type = "image/gif";
 
 }
+
 struct location Response::getLocationAndFilename(Request& req, Server& server){
 	struct location data;
 	std::string location = req.getContent();
@@ -82,10 +144,26 @@ void Response::handleGET(Request& req, Server& server, struct location& loc){
 				break;
 			}
 		}
+		if (!found){
+			if (route->autoindex){
+				std::string html = generateDirectoryListing(route->root, "/");
+				this->_content.assign(html.begin(), html.end());
+				this->_content_size = this->_content.size();
+				this->_status_code = 200;
+				this->_http_version = req.getVersion();
+				return;
+			}
+			else{
+				this->_status_code = 403;
+				this->_http_version = req.getVersion();
+				this->_content_size = 0;
+				return ;
+
+			}
+		}
 	}
 	//need protection in case of bad filename 
 	if (!found){
-		std::cout << "NOT found" << std::endl;
 		this->_status_code = 404;
 		this->_http_version = req.getVersion();
 		this->_content_size = 0;
@@ -149,6 +227,7 @@ std::vector<char> Response::getResponse() {
     // En-têtes
     header << "Content-Length: " << this->_content_size << "\r\n";
     header << "Content-Type: " << this->_content_type << "\r\n";
+	header << "Date: " << getHTTPDate()<< "\r\n";
     header << "Connection: close\r\n";
     header << "\r\n"; // ligne vide
 
