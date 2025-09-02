@@ -21,6 +21,8 @@ struct Route{
 
 class Server{
 public:
+	Server();
+	~Server();
 	int port;
 	std::string host;
 	std::vector<std::string> server_names;

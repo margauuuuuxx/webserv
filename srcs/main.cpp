@@ -28,6 +28,11 @@ std::vector<char> handleRequest(char* buffer, Server& server, int client_fd){
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();
+		//=========testing purpuse only===============
+		// std::string a = "HTTP/1.1 200 OK\r\nContent-Length: 16\r\n\r\nrequest  complete\n";
+		// std::vector<char> text(a.begin(), a.end());
+		// text.push_back('\0');
+		// return text;
 	}
 
 	std::string s = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";

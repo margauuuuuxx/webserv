@@ -20,6 +20,7 @@ private:
 	std::map <std::string, std::string> _headers;
 	std::multimap<std::string, std::string> _multiHeaders;
 	std::string _body;
+	bool		_requestFinished;
 public:
 	Request(void);
 	~Request(void);
@@ -43,4 +44,5 @@ public:
 	void				setTransferEncoding(bool state);
 	void				parse(void);
 	void				reset(void);
+	bool				requestState(void);
 };
