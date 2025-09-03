@@ -20,24 +20,6 @@ static bool readFile(const std::string& path, std::string& content) {
     return true;
 }
 
-bool    isCGIReq(const std::string& resource, const Route* route)
-{
-    if (route.cgiPath.empty())
-        return (false);
-
-    size_t dotPos = resource.rfind('.');
-    if (dotPos == std::string::npos)
-        return (false);
-
-    std::string ext = resource.substr(dotPos);
-    for (size_t i = 0; i < route.cgiExtension.size(); ++i) {
-        if (ext == route.cgiExtension[i])
-            return (true);
-    }
-
-    return (false);
-}
-
 void    handleRoute(Request& req, Server& server, Route* route)
 {
     std::string resource = req.getContent();
@@ -51,22 +33,52 @@ void    handleRoute(Request& req, Server& server, Route* route)
         handleStaticFile(req, server, route);
 }
 
-void Response::handleGET(Request& req, Server& server) {
-    for (size_t i = 0; i < route->index.size(); i++) {
-        std::string filename = route->root + "/" + route->index[i];
-        std::cout << "filename: " << filename << std::endl;
-        if (readFile(filename, this->_content)) {
-            std::cout << "good filename: " << filename << std::endl;
-            this->_statusCode = 200;
-            this->_httpVersion = req.getVersion();
-            this->_contentSize = this->_content.size();
-            return; // Success
+void Response::handleGET(Request& req, Server& server, Route* route) {
+    if (isDir(route))
+    {
+        for (size_t i = 0; i < route->index.size(); i++) {
+            std::string filename = route->root + "/" + route->index[i];
+            std::cout << "filename: " << filename << std::endl;
+            if (readFile(filename, this->_content)) {
+                std::cout << "good filename: " << filename << std::endl;
+                this->_statusCode = 200;
+                this->_httpVersion = req.getVersion();
+                this->_contentSize = this->_content.size();
+                return; // Success
+            }
+        }
+    
+        // serve the autoindex if index file not found
+        if (route.autoindex)
+        {
+    
+        }
+        else {    // no autoindex
+            std::cout << "NOT found and no autoindex" << std::endl;
+            buildErrorResponse(403, req, server);
+            return;
+        }
+        // no autoindex
+    }
+    else if (isFile(route))
+    {
+        if (isCGIReq(filename, route))
+            // handle CGI
+        else // read the file 
+        {
+            if (readFile(filename, this->content))
+            {
+                std::cout << "good filename: " << filename << std::endl;
+                this->_statusCode = 200;
+                this->_httpVersion = req.getVersion();
+                this->_contentSize = this->_content.size();
+                return; // Success
+            }
+            
         }
     }
-
-    // If no index file was found or readable
-    std::cout << "NOT found" << std::endl;
-    return buildErrorResponse(404, req, server);
+    else 
+        // WHAT TO THROW ?? 
 }
 
 void Response::handlePOST(Request& req, Server& server) {
@@ -110,7 +122,7 @@ std::string Response::getResponse() {
 }
 
 // ENTRY POINT INTO THE FILE
-typedef void (Response::*HandlerFct)(Request&, Server&);
+typedef void (Response::*HandlerFct)(Request&, Server&, Route* route);
 void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
@@ -125,6 +137,7 @@ void Response::handleRequest(Request& req, Server& server) {
     std::cout << "===RESPONSE SETUP===" << std::endl;
 
     // checking if the method is allowed
+    // CHECK IF DANS ALLOWED STRUCT ROUTE 
     static std::map<std::string, HandlerFct> handlers;
     if (handlers.empty()) {
         handlers["GET"] = &Response::handleGET;
@@ -134,10 +147,12 @@ void Response::handleRequest(Request& req, Server& server) {
 
     std::map<std::string, HandlerFct>::const_iterator it = handlers.find(req.getMethod());
     if (it != handlers.end())
-        (this->*(it->second))(req, server);
+        (this->*(it->second))(req, server, route);
     else
     {
         buildErrorResponse(405, req, server);
         return;
     }
+    // FAIRE UN MATCH avec route->allowedMethods 
+
 }
