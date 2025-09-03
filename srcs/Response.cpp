@@ -74,7 +74,6 @@ void Response::setContentType(std::string filename){
 		_content_type = "image/jpeg";
 	else if (filename.find(".gif")  != std::string::npos)
 		_content_type = "image/gif";
-
 }
 
 struct location Response::getLocationAndFilename(Request& req, Server& server){
@@ -117,9 +116,25 @@ bool Response::startsWith(const std::string &str, const std::string &prefix) {
     return str.compare(0, prefix.size(), prefix) == 0;
 }
 
+void handleGetCgi(std::string filename, std::string args){
+
+}
 void Response::handleGET(Request& req, Server& server, struct location& loc){
 	std::string filename = loc.filename;
 	Route *route = loc.route;
+	std::string args;
+	if( filename.find("?") != std::string::npos){
+		size_t pos = filename.find("?");
+		args = filename.substr(pos + 1);
+		filename = filename.substr(0, pos); 
+	}
+	if (filename.size() >= 3 && 
+		std::find(route->cgi_extension.begin(), route->cgi_extension.end(), 
+			filename.substr(filename.size() - 3)) != route->cgi_extension.end()) {
+		handleGetCgi(filename, args);
+		return ;
+		// C'est une extension CGI
+	}
 
 	std::ifstream file;
 	bool found = 0;
