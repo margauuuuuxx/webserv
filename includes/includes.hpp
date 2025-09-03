@@ -37,6 +37,7 @@
 #include "Poller.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "responseUtils.hpp"
 #include "Server.hpp"
 #include "Socket.hpp"
 #include "SocketArray.hpp"

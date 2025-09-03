@@ -6,6 +6,15 @@
 class Request;
 class Server;
 
+static const std::map<int, std::string> statusMessages = {
+    std::make_pair(200, "OK"),
+    std::make_pair(201, "Created"),
+    std::make_pair(204, "No content"),
+    std::make_pair(404, "Not found"),
+    std::make_pair(405, "Method not allowed"),
+    std::make_pair(501, "Not implemented")
+};
+
 class Response {
 public:
     Response();
