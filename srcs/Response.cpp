@@ -1,21 +1,29 @@
 #include "../includes/includes.hpp"
 
+static std::map<int, std::string> initStatusMessages() {
+    std::map<int, std::string> m;
+    m[200] = "OK";
+    m[201] = "Created";
+    m[204] = "No Content";
+    m[404] = "Not Found";
+    m[405] = "Method Not Allowed";
+    m[501] = "Not Implemented";
+    return m;
+}
+const std::map<int, std::string> statusMessages = initStatusMessages();
+
 Response::Response() : _contentSize(0), _statusCode(0) {}
 
 Response::~Response() {}
 
-// void    handleRoute(Request& req, Server& server, Route* route)
-// {
-//     std::string resource = req.getContent();
+void    Response::buildResponse(Request& req, Route* route, bool isAutoIndex) {
+    this->_statusCode = 200;
+    this->_httpVersion = req.getVersion();
+    this->_contentSize = this->_content.size();
+    if (isAutoIndex)
+        this->_content = generateAutoIndex(route->location); // IMPLEMENT
+}
 
-//     if (isCGIReq(resource, route))
-//         handleCGI(req, server, route);
-
-//     else if (route->uploadEnabled)
-//         handleUpload(req, server, route);
-//     else
-//         handleStaticFile(req, server, route);
-// }
 
 void Response::handleGET(Request& req, Server& server, Route* route) {
     if (isDir(route->location))
@@ -25,44 +33,41 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
             std::cout << "filename: " << filename << std::endl;
             if (readFile(filename, this->_content)) {
                 std::cout << "good filename: " << filename << std::endl;
-                this->_statusCode = 200;
-                this->_httpVersion = req.getVersion();
-                this->_contentSize = this->_content.size();
-                return; // Success
+                buildResponse(req, route, 0);
+                return;
             }
         }
-    
-        // serve the autoindex if index file not found
         if (route->autoindex)
         {
-    
+            buildResponse(req, route, 1);
+            return;
         }
-        else {    // no autoindex
-            std::cout << "NOT found and no autoindex" << std::endl;
+        else {
+            std::cout << "NOT found and no autoindex" << std::endl; // I WANT OUTPUT IN THE TERMINAL
             buildErrorResponse(403, req, server);
             return;
         }
-        // no autoindex
     }
-    else if (isFile(route->location))
-    {
-        if (isCGIReq(filename, route))
-            // handle CGI
-        else // read the file 
-        {
-            if (readFile(filename, this->content))
-            {
-                std::cout << "good filename: " << filename << std::endl;
-                this->_statusCode = 200;
-                this->_httpVersion = req.getVersion();
-                this->_contentSize = this->_content.size();
-                return; // Success
-            }
-            
+    else if (isFile(route->location)) {
+        std::string filename = route->root + "/" + route->location;
+        if (isCGIReq(filename, route)) {
+            handleCGI(filename, req, server, route); // IMPLEMENT
+            return;
+        }
+        else if (readFile(filename, this->_content)) {
+            std::cout << "good filename: " << filename << std::endl;
+            buildResponse(req, route, 0);
+            return;
+        }
+        else {
+            buildErrorResponse(404, req, server);
+            return;
         }
     }
-    else 
-        // WHAT TO THROW ?? 
+    else {
+        buildErrorResponse(404, req, server);
+        return;
+    }
 }
 
 void Response::handlePOST(Request& req, Server& server, Route* route) {
