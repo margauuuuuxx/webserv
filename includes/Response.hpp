@@ -20,7 +20,6 @@ public:
 	void setContentType(std::string file);
 	std::string getHTTPDate();
 	std::string generateDirectoryListing(const std::string &path, const std::string &uri);
-	void handleGetCgi(std::string filename, std::string args);
 private:
 	std::vector<char> _content;
 	std::string _content_type;
