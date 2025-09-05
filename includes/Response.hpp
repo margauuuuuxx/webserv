@@ -24,11 +24,11 @@ public:
     std::string getResponse();
 
 private:
-    void handleGET(Request& req, Server& server);
-    void handlePOST(Request& req, Server& server);
-    void handleDELETE(Request& req, Server& server);
+    void handleGET(Request& req, Server& server, Route* route);
+    void handlePOST(Request& req, Server& server, Route* route);
+    void handleDELETE(Request& req, Server& server, Route* route);
     void buildErrorResponse(int code, Request& req, Server& server);
-    Route*  findRoute(const std::string& location, Server &server);
+    Route*  findRoute(Request& req, Server &server);
 
     std::string _content;
     std::string _httpVersion;

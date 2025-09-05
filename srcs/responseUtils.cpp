@@ -1,5 +1,21 @@
 #include "../includes/includes.hpp"
 
+// Efficiently reads an entire file into a string.
+bool readFile(const std::string& path, std::string& content) {
+    std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
+    if (!file) {
+        return false;
+    }
+    // Seek to the end of the file to determine its size.
+    file.seekg(0, std::ios::end);
+    content.resize(file.tellg());
+    // Seek back to the beginning and read the whole file.
+    file.seekg(0, std::ios::beg);
+    file.read(&content[0], content.size());
+    file.close();
+    return true;
+}
+
 void Response::buildErrorResponse(int code, Request& req, Server& server) {
     this->_statusCode = code;
     this->_httpVersion = req.getVersion();
@@ -60,7 +76,7 @@ bool    isDir(const std::string& path)
 
 bool    isCGIReq(const std::string& resource, const Route* route)
 {
-    if (route.cgiPath.empty())
+    if (route->cgiPath.empty())
         return (false);
 
     size_t dotPos = resource.rfind('.');
@@ -68,8 +84,8 @@ bool    isCGIReq(const std::string& resource, const Route* route)
         return (false);
 
     std::string ext = resource.substr(dotPos);
-    for (size_t i = 0; i < route.cgiExtension.size(); ++i) {
-        if (ext == route.cgiExtension[i])
+    for (size_t i = 0; i < route->cgiExtension.size(); ++i) {
+        if (ext == route->cgiExtension[i])
             return (true);
     }
 

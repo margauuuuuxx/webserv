@@ -4,37 +4,21 @@ Response::Response() : _contentSize(0), _statusCode(0) {}
 
 Response::~Response() {}
 
-// Efficiently reads an entire file into a string.
-static bool readFile(const std::string& path, std::string& content) {
-    std::ifstream file(path.c_str(), std::ios::in | std::ios::binary);
-    if (!file) {
-        return false;
-    }
-    // Seek to the end of the file to determine its size.
-    file.seekg(0, std::ios::end);
-    content.resize(file.tellg());
-    // Seek back to the beginning and read the whole file.
-    file.seekg(0, std::ios::beg);
-    file.read(&content[0], content.size());
-    file.close();
-    return true;
-}
+// void    handleRoute(Request& req, Server& server, Route* route)
+// {
+//     std::string resource = req.getContent();
 
-void    handleRoute(Request& req, Server& server, Route* route)
-{
-    std::string resource = req.getContent();
+//     if (isCGIReq(resource, route))
+//         handleCGI(req, server, route);
 
-    if (isCGIReq(resource, route))
-        handleCGI(req, server, route);
-
-    else if (route->uploadEnabled)
-        handleUpload(req, server, route);
-    else
-        handleStaticFile(req, server, route);
-}
+//     else if (route->uploadEnabled)
+//         handleUpload(req, server, route);
+//     else
+//         handleStaticFile(req, server, route);
+// }
 
 void Response::handleGET(Request& req, Server& server, Route* route) {
-    if (isDir(route))
+    if (isDir(route->location))
     {
         for (size_t i = 0; i < route->index.size(); i++) {
             std::string filename = route->root + "/" + route->index[i];
@@ -49,7 +33,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         }
     
         // serve the autoindex if index file not found
-        if (route.autoindex)
+        if (route->autoindex)
         {
     
         }
@@ -60,7 +44,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         }
         // no autoindex
     }
-    else if (isFile(route))
+    else if (isFile(route->location))
     {
         if (isCGIReq(filename, route))
             // handle CGI
@@ -81,7 +65,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         // WHAT TO THROW ?? 
 }
 
-void Response::handlePOST(Request& req, Server& server) {
+void Response::handlePOST(Request& req, Server& server, Route* route) {
 
     if (req.getBody().size() > server.clientMaxBodySize)
     {
@@ -93,7 +77,7 @@ void Response::handlePOST(Request& req, Server& server) {
 
 }
 
-void Response::handleDELETE(Request& req, Server& server) {
+void Response::handleDELETE(Request& req, Server& server, Route* route) {
     // Not implemented yet. Responding with an error.
     (void)req; // Suppress unused parameter warning
     (void)server; // Suppress unused parameter warning
