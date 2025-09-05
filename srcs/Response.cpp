@@ -120,8 +120,6 @@ void Response::handleRequest(Request& req, Server& server) {
 
     std::cout << "===RESPONSE SETUP===" << std::endl;
 
-    // checking if the method is allowed
-    // CHECK IF DANS ALLOWED STRUCT ROUTE 
     static std::map<std::string, HandlerFct> handlers;
     if (handlers.empty()) {
         handlers["GET"] = &Response::handleGET;
@@ -129,14 +127,14 @@ void Response::handleRequest(Request& req, Server& server) {
         handlers["DELETE"] = &Response::handleDELETE;
     }
 
-    std::map<std::string, HandlerFct>::const_iterator it = handlers.find(req.getMethod());
-    if (it != handlers.end())
+    std::string method = req.getMethod();
+    std::map<std::string, HandlerFct>::const_iterator it = handlers.find(method);
+    if (it != handlers.end()
+        && std::find(route->allowedMethods.begin(), route->allowedMethods.end(), method) != route->allowedMethods.end())
         (this->*(it->second))(req, server, route);
     else
     {
         buildErrorResponse(405, req, server);
         return;
     }
-    // FAIRE UN MATCH avec route->allowedMethods 
-
 }
