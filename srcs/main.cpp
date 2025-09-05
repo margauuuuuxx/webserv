@@ -28,11 +28,6 @@ std::vector<char> handleRequest(char* buffer, Server& server, int client_fd){
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();
-		//=========testing purpuse only===============
-		// std::string a = "HTTP/1.1 200 OK\r\nContent-Length: 16\r\n\r\nrequest  complete\n";
-		// std::vector<char> text(a.begin(), a.end());
-		// text.push_back('\0');
-		// return text;
 	}
 
 	std::string s = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
@@ -57,7 +52,11 @@ int main(int argc, char **argv) {
 	std::vector<Server> servers = parser.getServer();
 	SocketErray sockets;
 	std::map<int, Socket*> fdToSocket;
-	std::map<int, std::vector<char> > pendingResponses; // stocke les réponses en attente
+	std::map<int, std::vector<char> > pendingResponses;
+	std::map<int, time_t> lastActivity;
+
+	const int TIMEOUT_SECONDS = 10;
+	const int POLL_TIMEOUT_MS = 1000; // 1 second poll timeout for periodic cleanup
 
 	try {
 		Poller poller;
@@ -85,9 +84,44 @@ int main(int argc, char **argv) {
 		signal(SIGINT, signalHandler);
 
 		while (!stop) {
-			poller.wait(-1);
+			// Use timeout for periodic cleanup
+			poller.wait(POLL_TIMEOUT_MS);
 			std::vector<struct pollfd>& fds = poller.getFds();
+			
+			// Check for timed out connections BEFORE processing events
+			time_t currentTime = time(NULL);
+			std::vector<int> timedOutFds;
+			
+			for (std::map<int, time_t>::iterator it = lastActivity.begin(); it != lastActivity.end(); ++it) {
+				int fd = it->first;
+				time_t lastTime = it->second;
+				
+				// Skip server sockets (they don't timeout)
+				bool isServerSocket = false;
+				for (size_t j = 0; j < sockets.size(); ++j) {
+					if (fd == sockets[j]->getFd()) {
+						isServerSocket = true;
+						break;
+					}
+				}
+				
+				if (!isServerSocket && (currentTime - lastTime) > TIMEOUT_SECONDS) {
+					timedOutFds.push_back(fd);
+				}
+			}
+			
+			// Clean up timed out connections
+			for (size_t i = 0; i < timedOutFds.size(); ++i) {
+				int fd = timedOutFds[i];
+				std::cout << "Client fd=" << fd << " timed out after " << TIMEOUT_SECONDS << " seconds" << std::endl;
+				close(fd);
+				poller.removeFd(fd);
+				fdToSocket.erase(fd);
+				pendingResponses.erase(fd);
+				lastActivity.erase(fd);
+			}
 
+			// Process poll events
 			for (size_t i = 0; i < fds.size(); ++i) {
 				int fd = fds[i].fd;
 
@@ -99,9 +133,12 @@ int main(int argc, char **argv) {
 					for (size_t j = 0; j < sockets.size(); ++j) {
 						if (fd == sockets[j]->getFd()) {
 							int client_fd = sockets[j]->clientConnect();
-							std::cout << "Nouveau client connecté (fd=" << client_fd << ")" << std::endl;
-							poller.addFd(client_fd, POLLIN);
-							fdToSocket[client_fd] = sockets[j];
+							if (client_fd > 0) {
+								std::cout << "Nouveau client connecté (fd=" << client_fd << ")" << std::endl;
+								lastActivity[client_fd] = time(NULL);
+								poller.addFd(client_fd, POLLIN);
+								fdToSocket[client_fd] = sockets[j];
+							}
 							isListener = true;
 							break;
 						}
@@ -112,13 +149,22 @@ int main(int argc, char **argv) {
 						ssize_t bytes = read(fd, buffer, sizeof(buffer) - 1);
 
 						if (bytes <= 0) {
-							std::cout << "Client déconnecté (fd=" << fd << ")" << std::endl;
-							close(fd);
-							poller.removeFd(fd);
-							fdToSocket.erase(fd);
-							pendingResponses.erase(fd);
+							// // Client disconnected or error
+							// if (bytes == 0) {
+							// 	std::cout << "Client fd=" << fd << " disconnected" << std::endl;
+							// } else {
+							// 	std::cout << "Error reading from client fd=" << fd << std::endl;
+							// }
+							// close(fd);
+							// poller.removeFd(fd);
+							// fdToSocket.erase(fd);
+							// pendingResponses.erase(fd);
+							// lastActivity.erase(fd);
 							continue;
 						}
+
+						// Update activity time on successful read
+						lastActivity[fd] = time(NULL);
 
 						// Trouver le socket associé
 						std::map<int, Socket*>::iterator it = fdToSocket.find(fd);
@@ -138,7 +184,10 @@ int main(int argc, char **argv) {
 							}
 						}
 						else {
-							throw std::runtime_error("Client fd non trouvé lors de la réception");
+							std::cout << "Warning: Client fd " << fd << " not found in fdToSocket map" << std::endl;
+							close(fd);
+							poller.removeFd(fd);
+							lastActivity.erase(fd);
 						}
 					}
 				}
@@ -152,14 +201,34 @@ int main(int argc, char **argv) {
 
 						if (sent > 0) {
 							data.erase(data.begin(), data.begin() + sent); // Supprime la partie envoyée
+						} else if (sent < 0) {
+							// Send error
+							std::cout << "Error sending to client fd=" << fd << std::endl;
+							close(fd);
+							poller.removeFd(fd);
+							fdToSocket.erase(fd);
+							pendingResponses.erase(fd);
+							lastActivity.erase(fd);
+							continue;
 						}
 
 						// Si tout est envoyé, retour en lecture
 						if (data.empty()) {
 							pendingResponses.erase(fd);
+							lastActivity[fd] = time(NULL); // Update activity time after successful send
 							poller.modifyFd(fd, POLLIN);
 						}
 					}
+				}
+				
+				// Handle error events
+				if (fds[i].revents & (POLLERR | POLLHUP | POLLNVAL)) {
+					std::cout << "Poll error on fd=" << fd << " (revents=" << fds[i].revents << ")" << std::endl;
+					close(fd);
+					poller.removeFd(fd);
+					fdToSocket.erase(fd);
+					pendingResponses.erase(fd);
+					lastActivity.erase(fd);
 				}
 			}
 		}
@@ -168,6 +237,10 @@ int main(int argc, char **argv) {
 		std::cerr << "Erreur : " << e.what() << std::endl;
 	}
 
+	// Cleanup before shutdown
+	for (std::map<int, Socket*>::iterator it = fdToSocket.begin(); it != fdToSocket.end(); ++it) {
+		close(it->first);
+	}
 	std::cout << "=== server shutdown ===" << std::endl;
 	return 0;
 }
