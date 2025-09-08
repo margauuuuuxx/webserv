@@ -1,6 +1,11 @@
-#include "../includes.hpp"
+#include "../includes/includes.hpp"
 
-std::string handleCgi(const std::string& filePath,const std::string& body ){
+void	handleCGI(std::string filename, Request& req, Server& server, Route* route)
+{
+	// implement Margaux's version
+}
+
+std::string CGI(const std::string& filePath,const std::string& body ){ // fct de quentin
 	int pipefd[2];
 	if (pipe(pipefd) == -1)
 		throw std::runtime_error("Pipe failed");

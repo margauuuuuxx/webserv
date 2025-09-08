@@ -24,6 +24,7 @@ private:
     void buildErrorResponse(int code, Request& req, Server& server);
     void    buildResponse(Request& req, Route* route, bool isAutoIndex);
     Route*  findRoute(Request& req, Server &server);
+    std::string generateAutoIndex(const std::string& path, const std::string& reqURL);
 
     std::string _content;
     std::string _httpVersion;

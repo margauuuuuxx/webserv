@@ -32,6 +32,7 @@
 # define MAX_REQUEST_LINE_SIZE 8192
 # define MAX_HEADERS_SIZE 65536
 
+#include "CGI.hpp"
 #include "Parser.hpp"
 #include "Poller.hpp"
 #include "Request.hpp"

@@ -48,6 +48,10 @@ Route*  Response::findRoute(Request& req, Server &server)
     return (NULL);
 }
 
+std::string Response::generateAutoIndex(const std::string& path, const std::string& reqURL) {
+
+}
+
 bool    isFile(const std::string& path)
 {
     struct stat info;

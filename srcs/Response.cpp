@@ -20,8 +20,10 @@ void    Response::buildResponse(Request& req, Route* route, bool isAutoIndex) {
     this->_statusCode = 200;
     this->_httpVersion = req.getVersion();
     this->_contentSize = this->_content.size();
-    if (isAutoIndex)
-        this->_content = generateAutoIndex(route->location); // IMPLEMENT
+    if (isAutoIndex) {
+        std::string resourcePath = route->root + req.getContent();
+        this->_content = generateAutoIndex(resourcePath, req.getContent()); // END IMPLEMENTATION
+    }
 }
 
 
@@ -77,8 +79,6 @@ void Response::handlePOST(Request& req, Server& server, Route* route) {
         buildErrorResponse(413, req, server); // 413 Playload Too Large
         return;
     }
-
-    
 
 }
 
