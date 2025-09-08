@@ -38,6 +38,7 @@ int main(int argc, char **argv) {
 	std::vector<Server> servers = parser.getServer();
 	SocketArray sockets;
 	std::map<int, Socket*> fdToSocket;
+	srand(time(NULL)); // for upload ame files generation
 
 	try {
 		Poller poller;

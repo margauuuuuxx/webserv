@@ -16,13 +16,15 @@ Response::Response() : _contentSize(0), _statusCode(0) {}
 
 Response::~Response() {}
 
-void    Response::buildResponse(Request& req, Route* route, bool isAutoIndex) {
-    this->_statusCode = 200;
+void    Response::buildResponse(int statusCode, Request& req, Route* route, bool isAutoIndex, bool upload) {
+    this->_statusCode = statusCode;
     this->_httpVersion = req.getVersion();
     if (isAutoIndex) {
         std::string resourcePath = route->root + req.getContent();
         this->_content = generateAutoIndex(resourcePath, req.getContent()); // END IMPLEMENTATION
     }
+    if (upload)
+        this->_content = "<html><body><h1>201Created</h1></body></html>";
     this->_contentSize = this->_content.size();
 }
 
@@ -45,14 +47,14 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
             if (access(indexPath.c_str(), F_OK) == 0)
                 if (readFile(indexPath, this->_content)) {
                     std::cout << "good indexPath: " << indexPath << std::endl;
-                    buildResponse(req, route, 0);
+                    buildResponse(200, req, route, 0, 0);
                     indexFound = 1;
                     break;
                 }
         }
         if (!indexFound)
             if (route->autoindex)
-                buildResponse(req, route, 1);
+                buildResponse(200, req, route, 1, 0);
             else {
                 std::cout << "NOT found and no autoindex" << std::endl; // I WANT OUTPUT IN THE TERMINAL
                 buildErrorResponse(403, req, server);
@@ -65,7 +67,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         }
         else {
             if (readFile(resourcePath, this->_content))
-                buildResponse(req, route, 0);
+                buildResponse(200, req, route, 0, 0);
             else 
                 buildErrorResponse(403, req, server);
         }
@@ -78,10 +80,32 @@ void Response::handlePOST(Request& req, Server& server, Route* route) {
 
     if (req.getBody().size() > server.clientMaxBodySize)
     {
-        buildErrorResponse(413, req, server); // 413 Playload Too Large
+        buildErrorResponse(413, req, server);
         return;
     }
 
+    if (isCGIReq(req.getContent(), route)) {
+        std::string filename = route->root + req.getContent();
+        handleCGI(filename, req, server, route);
+        return;
+    }
+
+    if (route->uploadEnabled) {
+        std::stringstream filename_ss;
+        filename_ss << "upload_" << time(NULL);
+        std::string filePath = route->uploadStore + "/"  + filename_ss.str();
+
+        std::ofstream newFile(filePath.c_str(), std::ios::binary);
+        if (newFile.is_open()) {
+            newFile.write(req.getBody().c_str(), req.getBody().length());
+            newFile.close();
+            buildResponse(201, req, route, 0, 1);
+        }
+        else 
+            buildErrorResponse(500, req, server);
+        return;
+    }
+    buildErrorResponse(403, req, server);
 }
 
 void Response::handleDELETE(Request& req, Server& server, Route* route) {

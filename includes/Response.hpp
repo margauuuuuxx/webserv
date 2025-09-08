@@ -21,7 +21,7 @@ private:
     void handlePOST(Request& req, Server& server, Route* route);
     void handleDELETE(Request& req, Server& server, Route* route);
     void buildErrorResponse(int code, Request& req, Server& server);
-    void    buildResponse(Request& req, Route* route, bool isAutoIndex);
+    void    buildResponse(int statusCode, Request& req, Route* route, bool isAutoIndex, bool upload);
     Route*  findRoute(Request& req, Server &server);
     std::string generateAutoIndex(const std::string& path, const std::string& reqURL);
 
