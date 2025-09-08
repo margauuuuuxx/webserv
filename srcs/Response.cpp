@@ -19,57 +19,59 @@ Response::~Response() {}
 void    Response::buildResponse(Request& req, Route* route, bool isAutoIndex) {
     this->_statusCode = 200;
     this->_httpVersion = req.getVersion();
-    this->_contentSize = this->_content.size();
     if (isAutoIndex) {
         std::string resourcePath = route->root + req.getContent();
         this->_content = generateAutoIndex(resourcePath, req.getContent()); // END IMPLEMENTATION
     }
+    this->_contentSize = this->_content.size();
 }
 
 
 void Response::handleGET(Request& req, Server& server, Route* route) {
-    if (isDir(route->location))
-    {
-        for (size_t i = 0; i < route->index.size(); i++) {
-            std::string filename = route->root + "/" + route->index[i];
-            std::cout << "filename: " << filename << std::endl;
-            if (readFile(filename, this->_content)) {
-                std::cout << "good filename: " << filename << std::endl;
-                buildResponse(req, route, 0);
-                return;
-            }
-        }
-        if (route->autoindex)
-        {
-            buildResponse(req, route, 1);
-            return;
-        }
-        else {
-            std::cout << "NOT found and no autoindex" << std::endl; // I WANT OUTPUT IN THE TERMINAL
-            buildErrorResponse(403, req, server);
-            return;
-        }
-    }
-    else if (isFile(route->location)) {
-        std::string filename = route->root + "/" + route->location;
-        if (isCGIReq(filename, route)) {
-            handleCGI(filename, req, server, route); // IMPLEMENT
-            return;
-        }
-        else if (readFile(filename, this->_content)) {
-            std::cout << "good filename: " << filename << std::endl;
-            buildResponse(req, route, 0);
-            return;
-        }
-        else {
-            buildErrorResponse(404, req, server);
-            return;
-        }
-    }
-    else {
+    std::string resourcePath = route->root + req.getContent();
+
+    struct stat path_stat;
+    if (stat(resourcePath.c_str(), &path_stat) != 0) {
         buildErrorResponse(404, req, server);
         return;
     }
+
+    if (S_ISDIR(path_stat.st_mode))
+    {
+        bool indexFound = 0;
+        for (size_t i = 0; i < route->index.size(); i++) {
+            std::string indexPath = resourcePath + "/" + route->index[i];
+            std::cout << "indexPath: " << indexPath << std::endl;
+            if (access(indexPath.c_str(), F_OK) == 0)
+                if (readFile(indexPath, this->_content)) {
+                    std::cout << "good indexPath: " << indexPath << std::endl;
+                    buildResponse(req, route, 0);
+                    indexFound = 1;
+                    break;
+                }
+        }
+        if (!indexFound)
+            if (route->autoindex)
+                buildResponse(req, route, 1);
+            else {
+                std::cout << "NOT found and no autoindex" << std::endl; // I WANT OUTPUT IN THE TERMINAL
+                buildErrorResponse(403, req, server);
+            }
+    }
+    else if (S_ISREG(path_stat.st_mode)) {
+        if (isCGIReq(req.getContent(), route)) {
+            handleCGI(resourcePath, req, server, route); // IMPLEMENT
+            return;
+        }
+        else {
+            if (readFile(resourcePath, this->_content))
+                buildResponse(req, route, 0);
+            else 
+                buildErrorResponse(403, req, server);
+        }
+    }
+    else
+        buildErrorResponse(404, req, server);
 }
 
 void Response::handlePOST(Request& req, Server& server, Route* route) {

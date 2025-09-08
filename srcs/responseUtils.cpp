@@ -57,31 +57,31 @@ std::string Response::generateAutoIndex(const std::string& path, const std::stri
 
 }
 
-bool    isFile(const std::string& path)
-{
-    struct stat info;
+// bool    isFile(const std::string& path)
+// {
+//     struct stat info;
 
-    if (stat(path.c_str(), &info) != 0)
-    {
-        std::cout << "isFile: could not access file"; // CHECK HOW TO THROW ERROR MESSAGES 
-        return (0);
-    }
+//     if (stat(path.c_str(), &info) != 0)
+//     {
+//         std::cout << "isFile: could not access file"; // CHECK HOW TO THROW ERROR MESSAGES 
+//         return (0);
+//     }
 
-    return (info.st_mode & S_IFMT) == S_IFREG;
-}
+//     return (info.st_mode & S_IFMT) == S_IFREG;
+// }
 
-bool    isDir(const std::string& path)
-{
-    struct stat info;
+// bool    isDir(const std::string& path)
+// {
+//     struct stat info;
 
-    if (stat(path.c_str(), &info) != 0)
-    {
-        std::cout << "isFile: could not access file"; // CHECK HOW TO THROW ERROR MESSAGES 
-        return (0);
-    }
+//     if (stat(path.c_str(), &info) != 0)
+//     {
+//         std::cout << "isFile: could not access file"; // CHECK HOW TO THROW ERROR MESSAGES 
+//         return (0);
+//     }
 
-    return (info.st_mode & S_IFMT) == S_IFDIR;
-}
+//     return (info.st_mode & S_IFMT) == S_IFDIR;
+// }
 
 bool    isCGIReq(const std::string& resource, const Route* route)
 {
