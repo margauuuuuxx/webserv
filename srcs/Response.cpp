@@ -92,14 +92,13 @@ void Response::handleDELETE(Request& req, Server& server, Route* route) {
 
 std::string Response::getResponse() {
     std::ostringstream res;
-    res << this->_httpVersion << " " << this->_statusCode << " ";
-    if (statusMessages.count(this->_statusCode)) {
-        res << statusMessages[this->_statusCode];
-    } else {
-        res << "Unknown Status";
-    }
-    res << "\r\n";
+    std::string statusMessage = "Unknown status";
 
+    std::map<int, std::string>::const_iterator it = statusMessages.find(this->_statusCode);
+    if (it != statusMessages.end())
+        statusMessage = it->second;
+
+    res << this->_httpVersion << " " << this->_statusCode << " " << statusMessage << "\r\n";
     res << "Content-Length: " << this->_contentSize << "\r\n";
     res << "Content-Type: text/html\r\n";
     res << "Connection: close\r\n";
