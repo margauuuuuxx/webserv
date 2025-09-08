@@ -2,6 +2,9 @@
 
 #include "includes.hpp"
 
+class Server;
+struct Route;
+
 class Parser {
 public:
 	Parser();

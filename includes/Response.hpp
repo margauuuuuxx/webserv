@@ -2,11 +2,10 @@
 
 #include "includes.hpp"
 
-// Forward-declare classes to reduce header dependencies
 class Request;
 class Server;
+struct Route;
 
-const std::map<int, std::string> statusMessages;
 extern const std::map<int, std::string> statusMessages;
 
 class Response {
