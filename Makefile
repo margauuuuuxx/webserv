@@ -1,6 +1,6 @@
 NAME		= webserv 
 
-SRCS 		=	srcs/CGI.cpp srcs/main.cpp srcs/Parser.cpp \
+SRCS 		=	srcs/CGI.cpp srcs/CGIutils.cpp srcs/main.cpp srcs/Parser.cpp \
 				srcs/Poller.cpp srcs/Request.cpp srcs/Response.cpp \
 				srcs/responseUtils.cpp srcs/Server.cpp srcs/Socket.cpp \
 				srcs/SocketArray.cpp srcs/utils.cpp
