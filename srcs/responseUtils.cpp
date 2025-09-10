@@ -32,9 +32,9 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
     // If no custom page, create a default one.
     std::ostringstream oss;
     std::string statusMessage = "Unknown status";
-    std::map<int, std::string>::const_iterator it = statusMessages.find(this->_statusCode);
-    if (it != statusMessages.end())
-        statusMessage = it->second;
+    std::map<int, std::string>::const_iterator it2 = statusMessages.find(this->_statusCode);
+    if (it2 != statusMessages.end())
+        statusMessage = it2->second;
     
     oss << "<html>\n<head><title>" << this->_statusCode << " " << statusMessage
         << "</title></head>\n<body>\n<h1>" << this->_statusCode << " " << statusMessage

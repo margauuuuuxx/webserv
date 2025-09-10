@@ -101,7 +101,7 @@ std::string toLower(std::string line, size_t end)
 
 	while (it != line.end() && end)
 	{
-		lower.pushBack((char)std::tolower(*it));
+		lower.push_back((char)std::tolower(*it));
 		it++;
 		end--;
 	}

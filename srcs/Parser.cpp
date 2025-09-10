@@ -1,10 +1,11 @@
 
-#include "../includes/includes.hpp"
-
-/*
-	This class is responsible for reading the config file.
-	it tokenizes the file, parses it and uses that information to configure one or more Server objects.
-*/
+#include "../includes/Parser.hpp"
+#include <cstddef>
+#include <fstream>
+#include <stdexcept>
+#include <string>
+#include <vector>
+#include <cstdlib>
 
 Parser::Parser(){}
 Parser::~Parser(){}
@@ -39,7 +40,7 @@ void Parser::tokenizer(std::ifstream& file){
 		std::istringstream iss(line);
 		std::string token;
 		while (iss >> token) {
-			_tokens.pushBack(token);
+			_tokens.push_back(token);
 		}
 	}
 }
@@ -94,7 +95,7 @@ void Parser::parseServer(){
 	}
 	if (_tokens[_i] != "}")
 		throw std::runtime_error("unexpected end of file missing } for server dirrective");
-	_servers.pushBack(server);
+	_servers.push_back(server);
 
 }
 
@@ -152,7 +153,7 @@ void Parser::parseHost(Server& server){
 void Parser::parseServerName(Server& server){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		server.serverNames.pushBack(_tokens[_i]);
+		server.serverNames.push_back(_tokens[_i]);
 		_i++;
 	}
 }
@@ -174,7 +175,7 @@ void Parser::parseErrorPage(Server& server){
             if (error_code < 100 || error_code > 599) {
                 throw std::runtime_error("invalid HTTP error code: " + _tokens[_i]);
             }
-            error_codes.pushBack(error_code);
+            error_codes.push_back(error_code);
         } else {
             // Not a valid integer - assume it's the file path
             error_page_path = _tokens[_i];
@@ -213,7 +214,7 @@ void Parser::parseRoutes(Server& server){
 	}
 	if (_tokens[_i] != "}")
 		throw std::runtime_error("unexpected end of file missing } for route dirrective");
-	server.routes.pushBack(route);
+	server.routes.push_back(route);
 }
 
 void Parser::parseRouteElements(Route& route){
@@ -256,7 +257,7 @@ void Parser::parseRoot(Route& route){
 void Parser::parseIndex(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		route.index.pushBack(_tokens[_i]);
+		route.index.push_back(_tokens[_i]);
 		_i++;
 	}
 }
@@ -264,7 +265,7 @@ void Parser::parseAllowMethods(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
 		if (_tokens[_i] == "GET" || _tokens[_i] == "POST" || _tokens[_i] == "DELETE")
-			route.allowedMethods.pushBack(_tokens[_i]);
+			route.allowedMethods.push_back(_tokens[_i]);
 		else
 		 throw std::runtime_error("not a valide methode: " + _tokens[_i]);
 		_i++;
@@ -302,7 +303,7 @@ void Parser::parseUploadEnable(Route& route){
 void Parser::parseCgiExtention(Route& route){
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != ";") {
-		route.cgiExtension.pushBack(_tokens[_i]);
+		route.cgiExtension.push_back(_tokens[_i]);
 		_i++;
 	}
 }

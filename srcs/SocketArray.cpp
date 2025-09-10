@@ -12,7 +12,7 @@ SocketArray::~SocketArray(){
 	}
 }
 void SocketArray::pushBack(Socket* s){
-	_sockets.pushBack(s);
+	_sockets.push_back(s);
 }
 Socket* SocketArray::operator [] (size_t i){
 	return _sockets[i];

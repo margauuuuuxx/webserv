@@ -2,13 +2,15 @@
 
 #include "includes.hpp"
 
+class Server;
+
 class Socket {
 public:
 	Socket(int port);
 	~Socket();
 
 	int		getFd() const;
-	Server&	getServer();
+	Server*	getServer();
 	int 	clientConnect();
 	void 	addServer(const Server& s);
 
@@ -20,5 +22,5 @@ private:
 	socklen_t	addrlen;
 	socklen_t	clientaddrlen;
 	int			backlog;
-	Server		server;
+	Server*		server;
 };

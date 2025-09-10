@@ -96,11 +96,11 @@ int main(int argc, char **argv) {
 							Socket* sock = it->second;
 
 							std::cout << "===REQUETE===" << std::endl;
-							std::cout << "Requête reçue sur socket liée au port " << sock->getServer().port << std::endl;
+							std::cout << "Requête reçue sur socket liée au port " << sock->getServer()->port << std::endl;
 							std::cout << "Client fd = " << fd << std::endl;
 							buffer[bytes] = '\0';
 							std::cout << "Message reçu: " << buffer;
-							std::string response = handleRequest(buffer, sock->getServer(), fd);
+							std::string response = handleRequest(buffer, *sock->getServer(), fd);
 							if (!response.empty())
 								send(fd, response.c_str(), response.size(), 0);
 						}

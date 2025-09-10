@@ -296,9 +296,9 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE]){
 			if (!this->_waitingForData)
 			{
 				for (size_t i = 0; i != this->_contentLenCopy; i++)
-					this->_toParse.pushBack(buffer.at(i));
-				this->_toParse.pushBack('\r');
-				this->_toParse.pushBack('\n');
+					this->_toParse.push_back(buffer.at(i));
+				this->_toParse.push_back('\r');
+				this->_toParse.push_back('\n');
 			}
 			else
 				this->_toParse.append(buffer);

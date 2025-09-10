@@ -6,6 +6,7 @@
 
 Socket::Socket(int port) {
 	listenSocketFd = -1;
+	server = NULL;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);//(domaine, type, protocol)
 	if (sockfd < 0) {
 		throw std::runtime_error("error while creating socket");
@@ -29,6 +30,8 @@ Socket::~Socket() {
 	if (listenSocketFd != -1) {
 		close(listenSocketFd);
 	}
+	if (server)
+		delete server;
 }
 
 int Socket::getFd() const{
@@ -41,9 +44,12 @@ int Socket::clientConnect(){
     }
 	return listenSocketFd;
 }
+
 void Socket::addServer(const Server& s){
-	this->server = s;
+	if (this->server)
+		delete this->server;
+	this->server = new Server(s);
 }
-Server& Socket::getServer(){
+Server* Socket::getServer(){
 	return server;
 }
