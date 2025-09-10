@@ -7,7 +7,7 @@ SRCS 		=	srcs/CGI.cpp srcs/main.cpp srcs/Parser.cpp \
 OBJS_DIR	= objs
 INC_DIR		= includes
 OBJS		= $(patsubst srcs/%.cpp, $(OBJS_DIR)/%.o, $(SRCS))
- FLAGS 		= -std=c++98 #-Wall -Wextra -Werror  
+FLAGS 		= -std=c++98 -Wall -Wextra -Werror -DDEBUG_MODE #look here !!!
 INCLUDES	= -I$(INC_DIR)
 
 RED   		= \033[1;38;5;196m

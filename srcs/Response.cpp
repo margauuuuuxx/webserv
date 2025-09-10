@@ -45,22 +45,23 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         bool indexFound = 0;
         for (size_t i = 0; i < route->index.size(); i++) {
             std::string indexPath = resourcePath + "/" + route->index[i];
-            std::cout << "indexPath: " << indexPath << std::endl;
+            DEBUG_LOG("indexPath: " << indexPath);
             if (access(indexPath.c_str(), F_OK) == 0)
                 if (readFile(indexPath, this->_content)) {
-                    std::cout << "good indexPath: " << indexPath << std::endl;
+                    DEBUG_LOG("good indexPath: " << indexPath);
                     buildResponse(200, req, route, 0, 0);
                     indexFound = 1;
                     break;
                 }
         }
-        if (!indexFound)
+        if (!indexFound) {
             if (route->autoindex)
                 buildResponse(200, req, route, 1, 0);
             else {
-                std::cout << "NOT found and no autoindex" << std::endl; // I WANT OUTPUT IN THE TERMINAL
+                DEBUG_LOG("NOT found and no autoindex");
                 buildErrorResponse(403, req, server);
             }
+        }
     }
     else if (S_ISREG(path_stat.st_mode)) {
         if (isCGIReq(req.getContent(), route)) {
@@ -80,7 +81,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
 
 void Response::handlePOST(Request& req, Server& server, Route* route) {
 
-    if (req.getBody().size() > server.clientMaxBodySize)
+    if (req.getBody().size() > static_cast<size_t>(server.clientMaxBodySize))
     {
         buildErrorResponse(413, req, server);
         return;
@@ -126,7 +127,7 @@ void Response::handleDELETE(Request& req, Server& server, Route* route) {
 
     if (remove(filePath.c_str()) == 0) {
         buildResponse(204, req, route, 0, 0);
-        std::cout << "File " << filePath << " deleted successfully" << std::endl;
+        DEBUG_LOG("File " << filePath << " deleted successfully");
     } else {
         if (errno == EBUSY) // file is in use/locked
             buildErrorResponse(409, req, server);
@@ -167,7 +168,7 @@ void Response::handleRequest(Request& req, Server& server) {
         return;
     }
 
-    std::cout << "===RESPONSE SETUP===" << std::endl;
+    DEBUG_LOG("===RESPONSE SETUP===");
 
     static std::map<std::string, HandlerFct> handlers;
     if (handlers.empty()) {

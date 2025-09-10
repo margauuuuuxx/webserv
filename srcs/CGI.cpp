@@ -2,6 +2,10 @@
 
 void	handleCGI(std::string filename, Request& req, Server& server, Route* route)
 {
+	(void)filename;
+	(void)req;
+	(void)server;
+	(void)route;
 	// implement Margaux's version
 }
 

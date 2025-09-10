@@ -32,6 +32,12 @@
 # define MAX_REQUEST_LINE_SIZE 8192
 # define MAX_HEADERS_SIZE 65536
 
+#ifdef DEBUG_MODE
+    #define DEBUG_LOG(msg) std::cerr << msg << std::endl
+#else 
+    #define DEBUG_LOG(msg)
+#endif
+
 #include "CGI.hpp"
 #include "Parser.hpp"
 #include "Poller.hpp"

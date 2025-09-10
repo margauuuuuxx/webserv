@@ -54,6 +54,8 @@ Route*  Response::findRoute(Request& req, Server &server)
 }
 
 std::string Response::generateAutoIndex(const std::string& path, const std::string& reqURL) {
+    (void)path;
+    (void)reqURL;
     return "AUTOINDEX";
 }
 
