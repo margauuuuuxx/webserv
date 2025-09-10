@@ -23,7 +23,7 @@ void    Response::buildResponse(int statusCode, Request& req, Route* route, bool
     this->_httpVersion = req.getVersion();
     if (isAutoIndex) {
         std::string resourcePath = route->root + req.getContent();
-        this->_content = generateAutoIndex(resourcePath, req.getContent()); // END IMPLEMENTATION
+        this->_content = generateAutoIndex(resourcePath, req.getContent());
     }
     if (upload)
         this->_content = "<html><body><h1>201Created</h1></body></html>";
@@ -55,8 +55,16 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
                 }
         }
         if (!indexFound) {
-            if (route->autoindex)
-                buildResponse(200, req, route, 1, 0);
+            if (route->autoindex) {
+                std::string resourcePath = route->root + req.getContent();
+                std::string autoIndexContent = generateAutoIndex(resourcePath, req.getContent());
+                if (autoIndexContent.empty()) {
+                    DEBUG_LOG("Autoindex string empty");
+                    buildErrorResponse(500, req, server);
+                }
+                else 
+                    buildResponse(200, req, route, 1, 0);
+            }
             else {
                 DEBUG_LOG("NOT found and no autoindex");
                 buildErrorResponse(403, req, server);

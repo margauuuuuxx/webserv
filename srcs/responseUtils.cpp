@@ -53,10 +53,53 @@ Route*  Response::findRoute(Request& req, Server &server)
     return (NULL);
 }
 
+// The goal of this function is to create an HTML page that lists all the files and folders within a given dir, with each entry being a clickable link
 std::string Response::generateAutoIndex(const std::string& path, const std::string& reqURL) {
-    (void)path;
-    (void)reqURL;
-    return "AUTOINDEX";
+    DEBUG_LOG("ReqURL inside generateAutoIndex =    " << reqURL);
+    std::ostringstream oss;
+    oss << "<html><head><title>Index of " + reqURL + "</title></head><body>";
+    oss << "<h1>Index of " << reqURL << "</h1><hr><ul>";
+
+    DEBUG_LOG("Dir path for GenerateAutoIndex =     " << path);
+    DIR* dir = opendir(path.c_str());
+    if (!dir) {
+        DEBUG_LOG(RED << "Error:" << RESET << "GenerateAutoIndex: Cannot open directory: " << path);
+        return "";
+    }
+
+    struct dirent* entry;
+    while ((entry = readdir(dir)) != NULL) {
+        std::string name = entry->d_name;
+        if (name == "." || name == "..")
+            continue;
+
+        std::string fullPath = path;
+        if (!fullPath.empty() && fullPath[fullPath.size() - 1] != '/')
+            fullPath += '/';
+        fullPath += name;
+
+        struct stat path_stat;
+        if (stat(fullPath.c_str(), &path_stat) != 0) {
+            DEBUG_LOG(RED << "Error: " << RESET << "generateAutoIndex: stat()");
+            continue;;
+        }
+
+        std::string href = reqURL;
+        if (!href.empty() && href[href.size() - 1] != '/')
+            href += '/';
+        href += name;
+
+        std::string displayName = name;
+        if (S_ISDIR(path_stat.st_mode))
+            displayName += "/";
+
+        oss << "<li><a href=\"" << href << "\">" << displayName << "</a></li>";
+    }
+        if (closedir(dir) != 0)
+            DEBUG_LOG(RED << "Error: " << RESET << "generateAutoIndex: closedir()");
+
+        oss << "</ul><hr></body></html>";
+        return oss.str();
 }
 
 bool    isCGIReq(const std::string& resource, const Route* route)
