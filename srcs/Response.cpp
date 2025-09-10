@@ -7,6 +7,8 @@ static std::map<int, std::string> initStatusMessages() {
     m[204] = "No Content";
     m[404] = "Not Found";
     m[405] = "Method Not Allowed";
+    m[409] = "Conflict";
+    m[500] = "Internal Server Error";
     m[501] = "Not Implemented";
     return m;
 }
@@ -109,12 +111,29 @@ void Response::handlePOST(Request& req, Server& server, Route* route) {
 }
 
 void Response::handleDELETE(Request& req, Server& server, Route* route) {
-    // Not implemented yet. Responding with an error.
-    (void)req; // Suppress unused parameter warning
-    (void)server; // Suppress unused parameter warning
-    buildErrorResponse(501, req, server); // 501 Not Implemented
-}
+    std::string filePath = route->root + req.getContent();
 
+    struct stat path_stat;
+    if (stat(filePath.c_str(), &path_stat) != 0) {
+        buildErrorResponse(404, req, server);
+        return;
+    }
+
+    if (!S_ISREG(path_stat.st_mode) || access(filePath.c_str(), W_OK) != 0) {
+        buildErrorResponse(403, req, server);
+        return;
+    }
+
+    if (remove(filePath.c_str()) == 0) {
+        buildResponse(204, req, route, 0, 0);
+        std::cout << "File " << filePath << " deleted successfully" << std::endl;
+    } else {
+        if (errno == EBUSY) // file is in use/locked
+            buildErrorResponse(409, req, server);
+        else 
+            buildErrorResponse(500, req, server);
+    }
+}
 
 std::string Response::getResponse() {
     std::ostringstream res;
