@@ -40,6 +40,7 @@
 #endif
 
 #include "CGI.hpp"
+#include "CGIutils.hpp"
 #include "Parser.hpp"
 #include "Poller.hpp"
 #include "Request.hpp"

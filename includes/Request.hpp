@@ -20,6 +20,7 @@ private:
 	std::map <std::string, std::string>		_headers;
 	std::multimap<std::string, std::string>	_multiHeaders;
 	std::string 							_body;
+	std::string								_clientIP;
 
 public:
 	Request(void);
@@ -29,6 +30,7 @@ public:
 	std::string	const							&getMethod(void) const;
 	std::string	const							&getContent(void) const;
 	std::string	const							&getVersion(void) const;
+	std::string const							&getClientIP(void) const;
 	std::map<std::string, std::string>	const	&getHeaders(void) const;
 	std::string	const							&getBody(void) const;
 	std::string	const							&getToParse(void) const;
@@ -42,6 +44,7 @@ public:
 	int											setToParse(char buffer[MAX_REQUEST_SIZE]);
 	void										setContentLen(size_t len);
 	void										setTransferEncoding(bool state);
+	void										setClientIP(const std::string& ip);
 	void										parse(void);
 	void										reset(void);
 };

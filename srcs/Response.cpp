@@ -168,7 +168,6 @@ typedef void (Response::*HandlerFct)(Request&, Server&, Route* route);
 void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
-    // checking the route 
     Route* route = findRoute(req, server);
     if (!route)
     {

@@ -57,6 +57,10 @@ std::string	const	&Request::getMethod(void) const {
 	return (this->_method);
 }
 
+std::string const	&Request::getClientIP(void) const {
+	return (this->_clientIP);
+}
+ 
 std::string const &Request::getContent(void) const{
 	return (this->_content);
 }
@@ -104,6 +108,10 @@ void Request::setContentLen(size_t len){
 
 void Request::setTransferEncoding(bool state){
 	this->_transferEncoding = state;
+}
+
+void	Request::setClientIP(const std::string& ip) {
+	this->_clientIP = ip;
 }
 
 int Request::assignError(std::string error){

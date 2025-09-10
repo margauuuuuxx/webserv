@@ -94,6 +94,9 @@ int main(int argc, char **argv) {
 						std::map<int, Socket*>::iterator it = fdToSocket.find(fd);
 						if (it != fdToSocket.end()) {
 							Socket* sock = it->second;
+							Server* server = sock->getServer();
+							Request& request = server->requests[fd];
+							request.setClientIP(sock->getClientIP());
 
 							std::cout << "===REQUETE===" << std::endl;
 							std::cout << "Requête reçue sur socket liée au port " << sock->getServer()->port << std::endl;

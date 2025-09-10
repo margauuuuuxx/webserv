@@ -37,6 +37,11 @@ Socket::~Socket() {
 int Socket::getFd() const{
 	return sockfd;
 }
+
+std::string	Socket::getClientIP() const {
+	return inet_ntoa(this->clientaddr.sin_addr);
+}
+
 int Socket::clientConnect(){
 
 	 if ((listenSocketFd = accept(sockfd, (struct sockaddr*)&(this->clientaddr), (&this->clientaddrlen))) < 0) {
