@@ -57,3 +57,31 @@ char**  vectToArray(const std::vector<std::string>& v) {
 	arr[i] = NULL;
     return (arr);
 }
+
+void    closePipes(int pipe1[2], int pipe2[2]) {
+    if (pipe1[0] != -1)
+        close(pipe1[0]);
+    if (pipe1[1] != -1)
+        close(pipe1[1]);
+    if (pipe2[0] != -1)
+        close(pipe2[0]);
+    if (pipe2[1] != -1)
+        close(pipe2[1]);
+}
+
+void    freeEnvv(char **envv) {
+    for (size_t i = 0; envv[i] != NULL; ++i)
+        free(envv[i]);
+    delete[] envv;
+}
+
+std::string readCGI(int fd) {
+    std::string CGIoutput;
+    char        buffer[4096];
+    ssize_t     bytesRead;
+
+    while ((bytesRead = read(fd, buffer, sizeof(buffer))) > 0)
+        CGIoutput.append(buffer, bytesRead);
+    close(fd);
+    return (CGIoutput);
+}

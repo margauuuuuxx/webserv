@@ -73,7 +73,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
     }
     else if (S_ISREG(path_stat.st_mode)) {
         if (isCGIReq(req.getContent(), route)) {
-            handleCGI(resourcePath, req, server, route); // IMPLEMENT
+            handleCGI(*this, resourcePath, req, server, route);
             return;
         }
         else {
@@ -97,7 +97,7 @@ void Response::handlePOST(Request& req, Server& server, Route* route) {
 
     if (isCGIReq(req.getContent(), route)) {
         std::string filename = route->root + req.getContent();
-        handleCGI(filename, req, server, route);
+        handleCGI(*this, filename, req, server, route);
         return;
     }
 
