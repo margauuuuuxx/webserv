@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include "includes.hpp"
 
 class Request;
 class Server;
@@ -16,9 +16,9 @@ class CGI {
         std::string         _pathInfo;
         std::string         _scriptName;
         std::string         _queryString;
-        const std::string   &_reqURL;
+        const std::string&  _reqURL;
         char**              _envv;
-        //std::map<std::string, std::string>  _envvMap;
+        std::string         _CGIoutput;
 
         CGI();
         void    _parse();
@@ -27,6 +27,7 @@ class CGI {
         void    _setSNandPI();
         void    _setHeaders(std::vector<std::string>);
         void    _vectToArray(std::vector<std::string>);
+        void    _readCGI(int fd);
         
         public:
         CGI(Request &req, Server& server, const std::string& scriptPath);
@@ -34,7 +35,7 @@ class CGI {
         
         void                freeEnvv();
         void	            handleCGI(Response &res, const std::string& filename, Request& req, Server& server, Route* route);
-        void                execute();
+        void                execute(Route* route);
         char**              getEnvv() const;
         const std::string&  getCGIPath() const;
         const std::string&  getPathInfo() const;

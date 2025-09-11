@@ -74,7 +74,7 @@ void	CGI::freeEnvv() {
     delete[] _envv;
 }
 
-std::string readCGI(int fd) {
+void	CGI::_readCGI(int fd) {
     std::string CGIoutput;
     char        buffer[4096];
     ssize_t     bytesRead;
