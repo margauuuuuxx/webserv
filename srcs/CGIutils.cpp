@@ -1,41 +1,41 @@
 #include "../includes/includes.hpp"
 
-std::vector<std::string> getSNandPI(const std::string& scriptPath, const std::string& reqURL) {
+void	CGI::_setSNandPI() {
     std::vector<std::string> result;
     std::string scriptBaseName;
-	size_t lastSlash = scriptPath.rfind('/');
+
+	size_t lastSlash = this._scriptPath.rfind('/');
 	if (lastSlash != std::string::npos)
-		scriptBaseName = scriptPath.substr(lastSlash + 1);
+		scriptBaseName = this._scriptPath.substr(lastSlash + 1);
 	else 
-		scriptBaseName = scriptPath;
+		scriptBaseName = this._scriptPath;
 	std::string pathInfo;
 	std::string scriptName;
-	size_t scriptPos = reqURL.find(scriptBaseName);
+	size_t scriptPos = this._reqURL.find(scriptBaseName);
 	if (scriptPos != std::string::npos) {
 		scriptPos += scriptBaseName.length();
-		scriptName = reqURL.substr(0, scriptPos);
+		scriptName = this._reqURL.substr(0, scriptPos);
 
-		size_t queryPos = reqURL.find('?', scriptPos);
+		size_t queryPos = this._reqURL.find('?', scriptPos);
 		if (queryPos != std::string::npos)
-			pathInfo = reqURL.substr(scriptPos, queryPos - scriptPos);
+			pathInfo = this._reqURL.substr(scriptPos, queryPos - scriptPos);
 		else 
-			pathInfo = reqURL.substr(scriptPos);
+			pathInfo = this._reqURL.substr(scriptPos);
 	}
-    result.push_back(scriptName);
-    result.push_back(pathInfo);
-    return (result);
+    _scriptName = scriptName;
+    _pathInfo = _pathInfo;
 }
 
-std::string getQueryString(const std::string& reqURL) {
-    size_t pos = reqURL.find('?');
+void	CGI::_setQueryString() {
+    size_t pos = this._reqURL.find('?');
 	std::string substr = "";
 	if (pos != std::string::npos)
-		substr = reqURL.substr(pos + 1);
-    return (substr);
+		substr = this._reqURL.substr(pos + 1);
+    this._queryString = substr;
 }
 
-void    getHeaders(std::vector<std::string>& envVector, Request &req) {
-    const std::map<std::string, std::string>& headersMap = req.getHeaders();
+void	CGI::_setHeaders(std::vector<std::string>& v) {
+    const std::map<std::string, std::string>& headersMap = _req.getHeaders();
 	std::map<std::string, std::string>::const_iterator it;
 	for (it = headersMap.begin(); it != headersMap.end(); ++it) {
 		std::string key = it->first;
@@ -43,19 +43,18 @@ void    getHeaders(std::vector<std::string>& envVector, Request &req) {
 			key[i] = std::toupper(key[i]);
 		std::replace(key.begin(), key.end(), '-', '_');
 		if (key == "CONTENT_TYPE")
-			envVector.push_back(key + "=" + it->second);
+			v.push_back(key + "=" + it->second);
 		else 
-		    envVector.push_back("HTTP_" + key + "=" + it->second);
+		    v.push_back("HTTP_" + key + "=" + it->second);
 	}
 }
 
-char**  vectToArray(const std::vector<std::string>& v) {
-    char** arr = new char*[v.size() + 1]; // FREEEEEEEE
+void	CGI::vectToArray(const std::vector<std::string>& v) {
+	_envv = [v.size() + 1]; // FREEEEEEEE
 	size_t i = 0;
 	for (; i < v.size(); ++i)
-		arr[i] = strdup(v[i].c_str());
-	arr[i] = NULL;
-    return (arr);
+		_envv[i] = strdup(v[i].c_str());
+	_envv[i] = NULL;
 }
 
 void    closePipes(int pipe1[2], int pipe2[2]) {
@@ -69,10 +68,10 @@ void    closePipes(int pipe1[2], int pipe2[2]) {
         close(pipe2[1]);
 }
 
-void    freeEnvv(char **envv) {
+void	CGI::freeEnvv() {
     for (size_t i = 0; envv[i] != NULL; ++i)
-        free(envv[i]);
-    delete[] envv;
+        free(_envv[i]);
+    delete[] _envv;
 }
 
 std::string readCGI(int fd) {

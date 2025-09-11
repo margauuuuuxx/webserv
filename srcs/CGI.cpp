@@ -1,29 +1,43 @@
 #include "../includes/includes.hpp"
 
-void	setEnvv(char ***envv, Request& req, Server& server, const std::string& scriptPath) {
-	std::vector<std::string> envVector;
-	std::string reqURL = req.getContent();
+CGI::CGI() {}
 
-	envVector.push_back("GATEWAY_INTERFACE=CGI/1.1");
-	envVector.push_back("SERVER_PROTOCOL=" + req.getVersion());
-	envVector.push_back("REQUEST_METHOD=" + req.getMethod());
-	envVector.push_back("SCRIPT_FILENAME=" + scriptPath);
-	envVector.push_back("CONTENT_LENGTH=" + std::to_string(req.getBody().size()));
-	envVector.push_back("SERVER_NAME=" + server.host);
-	envVector.push_back("SERVER_PORT=" + std::to_string(server.port));
-	envVector.push_back("REMOTE_ADDR=" + req.getClientIP()); 
-	envVector.push_back("QUERY_STRING=" + getQueryString(reqURL));
-
-	std::vector<std::string> vect = getSNandPI(scriptPath, reqURL);
-	envVector.push_back("SCRIPT_NAME=" + vect[0]);
-	envVector.push_back("PATH_INFO=" + vect[1]);
-
-	getHeaders(envVector, req);
-
-	*envv = vectToArray(envVector);
+CGI::CGI(Request &req, Server& server, const std::string& scriptPath) : _req(req), _server(server), _scriptPath(scriptPath) {
+	this._reqURL = req.getContent();
+	this._envv = NULL;
+	this._setEnvv();
 }
 
-void	parse(const std::string& output) {
+CGI::~CGI() {}
+
+
+
+void	CGI::_setEnvv() {
+	std::vector<std::string> envVector;
+
+	envVector.push_back("SERVER_SOFTWARE=webserv/1.0");
+	envVector.push_back("GATEWAY_INTERFACE=CGI/1.1");
+	envVector.push_back("SERVER_PROTOCOL=" + _req.getVersion());
+	envVector.push_back("REQUEST_METHOD=" + _req.getMethod());
+	envVector.push_back("SCRIPT_FILENAME=" + _scriptPath);
+	envVector.push_back("CONTENT_LENGTH=" + std::to_string(_req.getBody().size()));
+	envVector.push_back("SERVER_NAME=" + _server.host);
+	envVector.push_back("SERVER_PORT=" + std::to_string(_server.port));
+	envVector.push_back("REMOTE_ADDR=" + _req.getClientIP());
+
+	this._setQueryString(_reqURL);
+	envVector.push_back("QUERY_STRING=" + _queryString);
+
+	_setSNandPI();
+	envVector.push_back("SCRIPT_NAME=" + _scriptName);
+	envVector.push_back("PATH_INFO=" + _pathInfo);
+
+	_setHeaders(envVector);
+
+	_vectToArray(envVector);
+}
+
+void	CGI::_parse(const std::string& output) {
 	std::string	headers;
 	std::string body;
 
@@ -53,15 +67,14 @@ void	parse(const std::string& output) {
 
 // The goal of tis function is to create a child process that will transform into the CGI script
 void	handleCGI(Response& res, const std::string& filename, Request& req, Server& server, Route* route) {
-	char **envv = NULL;
-	setEnvv(&envv, req, server, filename);
+	CGI	CGIobj(req, server, filename);
 
 	int pipe_in[2]; // sending data to the script
 	int pipe_out[2]; // getting data from the script 
 
 	if (pipe(pipe_in) == -1) {
 		res.buildErrorResponse(500, req, server);
-		freeEnvv(envv);
+		CGIobj.freeEnvv();
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_in");
 		return;
 	}
@@ -70,7 +83,7 @@ void	handleCGI(Response& res, const std::string& filename, Request& req, Server&
 		res.buildErrorResponse(500, req, server);
 		close(pipe_in[0]);
 		close(pipe_in[1]);
-		freeEnvv(envv);
+		CGIobj.freeEnvv();
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_out");
 		return;
 	}
@@ -79,7 +92,7 @@ void	handleCGI(Response& res, const std::string& filename, Request& req, Server&
 	if (pid == -1) {
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: fork() failed");
 		closePipes(pipe_in, pipe_out);
-		freeEnvv(envv);
+		CGIobj.freeEnvv();
 		res.buildErrorResponse(500, req, server);
 		return;
 	}
@@ -107,52 +120,52 @@ void	handleCGI(Response& res, const std::string& filename, Request& req, Server&
 		waitpid(pid, &status, 0);
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 			res.buildErrorResponse(500, req, server);
-			freeEnvv(envv);
+			CGIobj.freeEnvv();
 			return;
 		}
 		parse(CGIoutput);
 	}
 
-	freeEnvv(envv);
+	CGIobj.freeEnvv();
 }
 
-std::string CGI(const std::string& filePath,const std::string& body ){ // fct de quentin
-	int pipefd[2];
-	if (pipe(pipefd) == -1)
-		throw std::runtime_error("Pipe failed");
-	pid_t pid = fork();
-	if (pid == -1)
-		throw std::runtime_error("Fork failed");
+// std::string CGI(const std::string& filePath,const std::string& body ){ // fct de quentin
+// 	int pipefd[2];
+// 	if (pipe(pipefd) == -1)
+// 		throw std::runtime_error("Pipe failed");
+// 	pid_t pid = fork();
+// 	if (pid == -1)
+// 		throw std::runtime_error("Fork failed");
 
-	if (pid == 0) // child
-	{
-		// STDOUT → pipe[1]
-		dup2(pipefd[1], STDOUT_FILENO);
-		close(pipefd[0]); // close unused read
+// 	if (pid == 0) // child
+// 	{
+// 		// STDOUT → pipe[1]
+// 		dup2(pipefd[1], STDOUT_FILENO);
+// 		close(pipefd[0]); // close unused read
 
-		if (!body.empty())
-		{
-			int inputPipe[2];
-			pipe(inputPipe);
-			write(inputPipe[1], body.c_str(), body.length());
-			close(inputPipe[1]);
-			dup2(inputPipe[0], STDIN_FILENO);
-		}
-		char* argv[] = { const_cast<char*>(filePath.c_str()), NULL };
-		extern char **environ;
-		execve(filePath.c_str(), argv, environ);
-		exit(1); // si exec échoue
-	}
-	close(pipefd[1]); 
-	char buffer[4096];
-	std::string result;
+// 		if (!body.empty())
+// 		{
+// 			int inputPipe[2];
+// 			pipe(inputPipe);
+// 			write(inputPipe[1], body.c_str(), body.length());
+// 			close(inputPipe[1]);
+// 			dup2(inputPipe[0], STDIN_FILENO);
+// 		}
+// 		char* argv[] = { const_cast<char*>(filePath.c_str()), NULL };
+// 		extern char **environ;
+// 		execve(filePath.c_str(), argv, environ);
+// 		exit(1); // si exec échoue
+// 	}
+// 	close(pipefd[1]); 
+// 	char buffer[4096];
+// 	std::string result;
 
-	ssize_t bytesRead;
-	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
-		result.append(buffer, bytesRead);
-	close(pipefd[0]);
+// 	ssize_t bytesRead;
+// 	while ((bytesRead = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+// 		result.append(buffer, bytesRead);
+// 	close(pipefd[0]);
 
-	waitpid(pid, NULL, 0);
+// 	waitpid(pid, NULL, 0);
 
-	return result;
-}
+// 	return result;
+// }
