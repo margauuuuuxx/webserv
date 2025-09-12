@@ -4,5 +4,5 @@
 
 struct Route;
 
-bool readFile(const std::string& path, std::string& content);
+bool    readFile(const std::string& path, std::string& content);
 bool    isCGIReq(const std::string& resource, const Route* route);

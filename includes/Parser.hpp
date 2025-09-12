@@ -11,12 +11,17 @@ class Parser{
 public:
 	Parser();
 	~Parser();
-	void parsefile(const std::string& filename);
+
+	void 	parsefile(const std::string& filename);
+	void	setAbsoluteRootPath(const std::string& path);
+	
 	std::vector<Server> getServer() const;
+
 private:
 	std::vector<std::string>	_tokens;
 	size_t						_i;
-	std::vector<Server> _servers;
+	std::vector<Server> 		_servers;
+	std::string					_absoluteRootPath;
 
 	void tokenizer(std::ifstream& file);
 	std::ifstream openfile(const std::string& filename);

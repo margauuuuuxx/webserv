@@ -23,6 +23,7 @@ public:
 	int							clientMaxBodySize;
 	std::vector<Route>			routes;
 	std::map<int, Request>		requests;
+	std::string					mainRoot;
 	
 	void printServerInfos() const;
 };

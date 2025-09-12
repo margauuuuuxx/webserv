@@ -355,3 +355,5 @@ void Parser::printServer() const{
 std::vector<Server> Parser::getServer() const{
 	return _servers;
 }
+
+void	Parser::setAbsoluteRootPath(const std::string& path) { this->_absoluteRootPath = path; } // QUENTIN HELP !!! NEEDS TO BE STORED IN EACH SERVER OBJECT (mainRoot) JE LE CTACH AU DEBUT DU MAIN
