@@ -4,34 +4,34 @@ void	CGI::_setSNandPI() {
     std::vector<std::string> result;
     std::string scriptBaseName;
 
-	size_t lastSlash = this._scriptPath.rfind('/');
+	size_t lastSlash = _scriptPath.rfind('/');
 	if (lastSlash != std::string::npos)
-		scriptBaseName = this._scriptPath.substr(lastSlash + 1);
+		scriptBaseName = _scriptPath.substr(lastSlash + 1);
 	else 
-		scriptBaseName = this._scriptPath;
+		scriptBaseName = _scriptPath;
 	std::string pathInfo;
 	std::string scriptName;
-	size_t scriptPos = this._reqURL.find(scriptBaseName);
+	size_t scriptPos = _reqURL.find(scriptBaseName);
 	if (scriptPos != std::string::npos) {
 		scriptPos += scriptBaseName.length();
-		scriptName = this._reqURL.substr(0, scriptPos);
+		scriptName = _reqURL.substr(0, scriptPos);
 
-		size_t queryPos = this._reqURL.find('?', scriptPos);
+		size_t queryPos = _reqURL.find('?', scriptPos);
 		if (queryPos != std::string::npos)
-			pathInfo = this._reqURL.substr(scriptPos, queryPos - scriptPos);
+			pathInfo = _reqURL.substr(scriptPos, queryPos - scriptPos);
 		else 
-			pathInfo = this._reqURL.substr(scriptPos);
+			pathInfo = _reqURL.substr(scriptPos);
 	}
     _scriptName = scriptName;
-    _pathInfo = _pathInfo;
+    _pathInfo = pathInfo;
 }
 
 void	CGI::_setQueryString() {
-    size_t pos = this._reqURL.find('?');
+    size_t pos = _reqURL.find('?');
 	std::string substr = "";
 	if (pos != std::string::npos)
-		substr = this._reqURL.substr(pos + 1);
-    this._queryString = substr;
+		substr = _reqURL.substr(pos + 1);
+    _queryString = substr;
 }
 
 void	CGI::_setHeaders(std::vector<std::string>& v) {
@@ -49,8 +49,8 @@ void	CGI::_setHeaders(std::vector<std::string>& v) {
 	}
 }
 
-void	CGI::vectToArray(const std::vector<std::string>& v) {
-	_envv = [v.size() + 1]; // FREEEEEEEE
+void	CGI::_vectToArray(const std::vector<std::string>& v) {
+	_envv = new char*[v.size() + 1]; // FREEEEEEEE
 	size_t i = 0;
 	for (; i < v.size(); ++i)
 		_envv[i] = strdup(v[i].c_str());
@@ -69,7 +69,7 @@ void    closePipes(int pipe1[2], int pipe2[2]) {
 }
 
 void	CGI::freeEnvv() {
-    for (size_t i = 0; envv[i] != NULL; ++i)
+    for (size_t i = 0; _envv[i] != NULL; ++i)
         free(_envv[i]);
     delete[] _envv;
 }
@@ -80,7 +80,6 @@ void	CGI::_readCGI(int fd) {
     ssize_t     bytesRead;
 
     while ((bytesRead = read(fd, buffer, sizeof(buffer))) > 0)
-        CGIoutput.append(buffer, bytesRead);
+        _CGIoutput.append(buffer, bytesRead);
     close(fd);
-    return (CGIoutput);
 }

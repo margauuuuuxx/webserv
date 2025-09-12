@@ -1,11 +1,9 @@
 #include "../includes/includes.hpp"
 
-CGI::CGI() {}
-
-CGI::CGI(Request &req, Server& server, const std::string& scriptPath) : _req(req), _server(server), _scriptPath(scriptPath) {
-	this._reqURL = req.getContent();
-	this._envv = NULL;
-	this._setEnvv();
+CGI::CGI(Request &req, Server& server, const std::string& scriptPath, Response& res) : _req(req), _server(server), _scriptPath(scriptPath), _res(res) {
+	_reqURL = req.getContent();
+	_envv = NULL;
+	_setEnvv();
 }
 
 CGI::~CGI() {}
@@ -23,7 +21,7 @@ void	CGI::_setEnvv() {
 	envVector.push_back("SERVER_PORT=" + std::to_string(_server.port));
 	envVector.push_back("REMOTE_ADDR=" + _req.getClientIP());
 
-	this._setQueryString(_reqURL);
+	_setQueryString();
 	envVector.push_back("QUERY_STRING=" + _queryString);
 
 	_setSNandPI();
@@ -63,13 +61,14 @@ void	CGI::_parse() {
 	}
 }
 
+// The goal of tis function is to create a child process that will transform into the CGI script
 void	CGI::execute(Route* route) {
 	int pipe_in[2]; // sending data to the script
 	int pipe_out[2]; // getting data from the script 
 
 	if (pipe(pipe_in) == -1) {
 		_res.buildErrorResponse(500, _req, _server);
-		_freeEnvv();
+		freeEnvv();
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_in");
 		return;
 	}
@@ -78,7 +77,7 @@ void	CGI::execute(Route* route) {
 		_res.buildErrorResponse(500, _req, _server);
 		close(pipe_in[0]);
 		close(pipe_in[1]);
-		_freeEnvv();
+		freeEnvv();
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_out");
 		return;
 	}
@@ -87,8 +86,8 @@ void	CGI::execute(Route* route) {
 	if (pid == -1) {
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: fork() failed");
 		closePipes(pipe_in, pipe_out);
-		_freeEnvv();
-		res.buildErrorResponse(500, _req, _server);
+		freeEnvv();
+		_res.buildErrorResponse(500, _req, _server);
 		return;
 	}
 
@@ -110,21 +109,20 @@ void	CGI::execute(Route* route) {
 		if (!_req.getBody().empty())
 			write(pipe_in[1], _req.getBody().c_str(), _req.getBody().length());
 		close(pipe_in[1]);
-		readCGI(pipe_out[0]);
+		_readCGI(pipe_out[0]); // TO IMPLEMENT
 		int status;
 		waitpid(pid, &status, 0);
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-			_res.buildErrorResponse(500, req, server);
-			_freeEnvv();
+			_res.buildErrorResponse(500, _req, _server);
+			freeEnvv();
 			return;
 		}
 		_parse();
 	}
 }
 
-// The goal of tis function is to create a child process that will transform into the CGI script
 void	handleCGI(Response& res, const std::string& filename, Request& req, Server& server, Route* route) {
-	CGI	CGIobj(req, server, filename);
+	CGI	CGIobj(req, server, filename, res);
 	CGIobj.execute(route);
 	CGIobj.freeEnvv();
 }

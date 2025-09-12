@@ -10,13 +10,14 @@ class Response;
 class CGI {
     private:
         Request&            _req;
-        Server              _server;
+        Server&             _server;
         const std::string&  _scriptPath; 
+        Response&           _res;
         std::string         _CGIPath;
         std::string         _pathInfo;
         std::string         _scriptName;
         std::string         _queryString;
-        const std::string&  _reqURL;
+        std::string         _reqURL;
         char**              _envv;
         std::string         _CGIoutput;
 
@@ -25,21 +26,22 @@ class CGI {
         void    _setEnvv();
         void	_setQueryString();
         void    _setSNandPI();
-        void    _setHeaders(std::vector<std::string>);
-        void    _vectToArray(std::vector<std::string>);
+        void    _setHeaders(std::vector<std::string>& v);
+        void    _vectToArray(const std::vector<std::string>& v);
         void    _readCGI(int fd);
         
         public:
-        CGI(Request &req, Server& server, const std::string& scriptPath);
+        CGI(Request &req, Server& server, const std::string& scriptPath, Response &res);
         ~CGI();
         
         void                freeEnvv();
-        void	            handleCGI(Response &res, const std::string& filename, Request& req, Server& server, Route* route);
         void                execute(Route* route);
-        char**              getEnvv() const;
-        const std::string&  getCGIPath() const;
-        const std::string&  getPathInfo() const;
-        const std::string&  getQueryString() const;
+        
+        //void	            handleCGI(Response &res, const std::string& filename, Request& req, Server& server, Route* route);
+        // char**              getEnvv() const;
+        // const std::string&  getCGIPath() const;
+        // const std::string&  getPathInfo() const;
+        // const std::string&  getQueryString() const;
 };
 
-//std::string CGI(const std::string& filePath,const std::string& body );
+void	handleCGI(Response& res, const std::string& filename, Request& req, Server& server, Route* route);
