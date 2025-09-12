@@ -6,7 +6,13 @@ CGI::CGI(Request &req, Server& server, const std::string& scriptPath, Response& 
 	_setEnvv();
 }
 
-CGI::~CGI() {}
+CGI::~CGI() {
+	if (_envv != NULL) {
+		for (size_t i =0; _envv[i] != NULL; ++i)
+			free(_envv[i]);
+		delete[] _envv;
+	}
+}
 
 void	CGI::_setEnvv() {
 	std::vector<std::string> envVector;
@@ -35,14 +41,13 @@ void	CGI::_setEnvv() {
 
 void	CGI::_parse() {
 	std::string	headers;
-	std::string body;
 
 	size_t pos = _CGIoutput.find("\r\n\r\n");
 	if (pos != std::string::npos) {
 		headers = _CGIoutput.substr(0, pos);
-		body = _CGIoutput.substr(pos + 4); // +4 to skip \r\n\r\n
+		_parsedBody = _CGIoutput.substr(pos + 4); // +4 to skip \r\n\r\n
 	} else 
-		body = _CGIoutput;
+		_parsedBody = _CGIoutput;
 	
 	std::istringstream iss(headers);
 	std::string line;
@@ -54,11 +59,11 @@ void	CGI::_parse() {
 			value.erase(0, value.find_first_not_of(" \t")); // trim leading whitespace
 			if (!value.empty() && value[value.size() - 1] == '\r')
 				value.erase(value.size() - 1);
-			if (key == "Status") {
-				
-			}
+			_headersMap.insert(std::make_pair(key, value));
 		}
 	}
+
+	_res.buildCGIResponse(*this);
 }
 
 // The goal of tis function is to create a child process that will transform into the CGI script
@@ -68,7 +73,6 @@ void	CGI::execute(Route* route) {
 
 	if (pipe(pipe_in) == -1) {
 		_res.buildErrorResponse(500, _req, _server);
-		freeEnvv();
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_in");
 		return;
 	}
@@ -77,7 +81,6 @@ void	CGI::execute(Route* route) {
 		_res.buildErrorResponse(500, _req, _server);
 		close(pipe_in[0]);
 		close(pipe_in[1]);
-		freeEnvv();
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_out");
 		return;
 	}
@@ -86,7 +89,6 @@ void	CGI::execute(Route* route) {
 	if (pid == -1) {
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: fork() failed");
 		closePipes(pipe_in, pipe_out);
-		freeEnvv();
 		_res.buildErrorResponse(500, _req, _server);
 		return;
 	}
@@ -109,14 +111,31 @@ void	CGI::execute(Route* route) {
 		if (!_req.getBody().empty())
 			write(pipe_in[1], _req.getBody().c_str(), _req.getBody().length());
 		close(pipe_in[1]);
-		_readCGI(pipe_out[0]); // TO IMPLEMENT
-		int status;
-		waitpid(pid, &status, 0);
+
+		pid_t child_pid;
+		int status = 0;
+		time_t startTime = time(NULL);
+
+		while (true) {
+			child_pid = waitpid(pid, &status, WNOHANG);
+			if (child_pid == pid)
+				break;
+			if (time(NULL) - startTime > TIMEOUT_SECONDS) {
+				kill(pid, SIGKILL);
+				_res.buildErrorResponse(504, _req, _server); // 504 Gateway timeout
+				close(pipe_out[0]);
+				DEBUG_LOG(RED << "Error: " << RESET << "CGI timeout");
+				return;
+			}
+			usleep(10000);
+		}
+
 		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-			_res.buildErrorResponse(500, _req, _server);
-			freeEnvv();
+			_res.buildErrorResponse(500, _req, _server); // 500 Internal Server Error
 			return;
 		}
+
+		_readCGI(pipe_out[0]);	
 		_parse();
 	}
 }
@@ -124,7 +143,6 @@ void	CGI::execute(Route* route) {
 void	handleCGI(Response& res, const std::string& filename, Request& req, Server& server, Route* route) {
 	CGI	CGIobj(req, server, filename, res);
 	CGIobj.execute(route);
-	CGIobj.freeEnvv();
 }
 
 // std::string CGI(const std::string& filePath,const std::string& body ){ // fct de quentin

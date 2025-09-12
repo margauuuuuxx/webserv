@@ -50,7 +50,7 @@ void	CGI::_setHeaders(std::vector<std::string>& v) {
 }
 
 void	CGI::_vectToArray(const std::vector<std::string>& v) {
-	_envv = new char*[v.size() + 1]; // FREEEEEEEE
+	_envv = new char*[v.size() + 1];
 	size_t i = 0;
 	for (; i < v.size(); ++i)
 		_envv[i] = strdup(v[i].c_str());
@@ -68,14 +68,7 @@ void    closePipes(int pipe1[2], int pipe2[2]) {
         close(pipe2[1]);
 }
 
-void	CGI::freeEnvv() {
-    for (size_t i = 0; _envv[i] != NULL; ++i)
-        free(_envv[i]);
-    delete[] _envv;
-}
-
 void	CGI::_readCGI(int fd) {
-    std::string CGIoutput;
     char        buffer[4096];
     ssize_t     bytesRead;
 
@@ -83,3 +76,28 @@ void	CGI::_readCGI(int fd) {
         _CGIoutput.append(buffer, bytesRead);
     close(fd);
 }
+
+static int  stringToInt(const std::string &s) {
+    std::stringstream ss(s);
+    int num = 0;
+    ss >> num;
+    return (num);
+}
+
+int CGI::getStatusCode() { 
+    std::map<std::string, std::string>::const_iterator it = _headersMap.find("Status");
+    if (it != _headersMap.end())
+        return (stringToInt(it->second));
+    return (200);
+}
+
+std::map<std::string, std::string>  CGI::getHeadersMap() {
+    std::map<std::string, std::string>::const_iterator it = _headersMap.find("Status");
+    if (it != _headersMap.end())
+        _headersMap.erase("Status");
+    return (_headersMap);
+}
+
+const std::string&  CGI::getParsedBody() { return (this->_parsedBody); }
+
+const std::string&  CGI::getHTTPVersion() { return (_req.getVersion()); }

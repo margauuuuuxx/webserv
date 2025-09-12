@@ -9,17 +9,19 @@ class Response;
 
 class CGI {
     private:
-        Request&            _req;
-        Server&             _server;
-        const std::string&  _scriptPath; 
-        Response&           _res;
-        std::string         _CGIPath;
-        std::string         _pathInfo;
-        std::string         _scriptName;
-        std::string         _queryString;
-        std::string         _reqURL;
-        char**              _envv;
-        std::string         _CGIoutput;
+        Request&                            _req;
+        Server&                             _server;
+        const std::string&                  _scriptPath; 
+        Response&                           _res;
+        std::string                         _CGIPath;
+        std::string                         _pathInfo;
+        std::string                         _scriptName;
+        std::string                         _queryString;
+        std::string                         _reqURL;
+        char**                              _envv;
+        std::string                         _CGIoutput;
+        std::string                         _parsedBody;
+        std::map<std::string, std::string>  _headersMap;
 
         CGI();
         void    _parse();
@@ -34,8 +36,11 @@ class CGI {
         CGI(Request &req, Server& server, const std::string& scriptPath, Response &res);
         ~CGI();
         
-        void                freeEnvv();
-        void                execute(Route* route);
+        void                                execute(Route* route);
+        int                                 getStatusCode();
+        std::map<std::string, std::string>  getHeadersMap();
+        const std::string&                  getParsedBody();
+        const std::string&                  getHTTPVersion();
         
         //void	            handleCGI(Response &res, const std::string& filename, Request& req, Server& server, Route* route);
         // char**              getEnvv() const;

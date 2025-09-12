@@ -1,37 +1,13 @@
 #include "../includes/includes.hpp"
 
-static std::map<int, std::string> initStatusMessages() {
-    std::map<int, std::string> m;
-    m[200] = "OK";
-    m[201] = "Created";
-    m[204] = "No Content";
-    m[404] = "Not Found";
-    m[405] = "Method Not Allowed";
-    m[409] = "Conflict";
-    m[500] = "Internal Server Error";
-    m[501] = "Not Implemented";
-    return m;
+Response::Response() : _contentSize(0), _statusCode(0) { 
+    _initMIMETypes(); 
+    _initStatusMessages();
 }
-const std::map<int, std::string> statusMessages = initStatusMessages();
-
-Response::Response() : _contentSize(0), _statusCode(0) {}
 
 Response::~Response() {}
 
-void    Response::buildResponse(int statusCode, Request& req, Route* route, bool isAutoIndex, bool upload) {
-    this->_statusCode = statusCode;
-    this->_httpVersion = req.getVersion();
-    if (isAutoIndex) {
-        std::string resourcePath = route->root + req.getContent();
-        this->_content = generateAutoIndex(resourcePath, req.getContent());
-    }
-    if (upload)
-        this->_content = "<html><body><h1>201Created</h1></body></html>";
-    this->_contentSize = this->_content.size();
-}
-
-
-void Response::handleGET(Request& req, Server& server, Route* route) {
+void Response::_handleGET(Request& req, Server& server, Route* route) {
     std::string resourcePath = route->root + req.getContent();
 
     struct stat path_stat;
@@ -49,7 +25,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
             if (access(indexPath.c_str(), F_OK) == 0)
                 if (readFile(indexPath, this->_content)) {
                     DEBUG_LOG("good indexPath: " << indexPath);
-                    buildResponse(200, req, route, 0, 0);
+                    _buildResponse(200, req, route, 0, 0, _getMIMEType(indexPath));
                     indexFound = 1;
                     break;
                 }
@@ -57,13 +33,13 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         if (!indexFound) {
             if (route->autoindex) {
                 std::string resourcePath = route->root + req.getContent();
-                std::string autoIndexContent = generateAutoIndex(resourcePath, req.getContent());
+                std::string autoIndexContent = _generateAutoIndex(resourcePath, req.getContent());
                 if (autoIndexContent.empty()) {
                     DEBUG_LOG("Autoindex string empty");
                     buildErrorResponse(500, req, server);
                 }
                 else 
-                    buildResponse(200, req, route, 1, 0);
+                    _buildResponse(200, req, route, 1, 0, "text/html");
             }
             else {
                 DEBUG_LOG("NOT found and no autoindex");
@@ -77,8 +53,9 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
             return;
         }
         else {
+            std::string MIMEType = _getMIMEType(resourcePath);
             if (readFile(resourcePath, this->_content))
-                buildResponse(200, req, route, 0, 0);
+                _buildResponse(200, req, route, 0, 0, MIMEType);
             else 
                 buildErrorResponse(403, req, server);
         }
@@ -87,7 +64,7 @@ void Response::handleGET(Request& req, Server& server, Route* route) {
         buildErrorResponse(404, req, server);
 }
 
-void Response::handlePOST(Request& req, Server& server, Route* route) {
+void Response::_handlePOST(Request& req, Server& server, Route* route) {
 
     if (req.getBody().size() > static_cast<size_t>(server.clientMaxBodySize))
     {
@@ -110,7 +87,7 @@ void Response::handlePOST(Request& req, Server& server, Route* route) {
         if (newFile.is_open()) {
             newFile.write(req.getBody().c_str(), req.getBody().length());
             newFile.close();
-            buildResponse(201, req, route, 0, 1);
+            _buildResponse(201, req, route, 0, 1, "text/html");
         }
         else 
             buildErrorResponse(500, req, server);
@@ -119,7 +96,7 @@ void Response::handlePOST(Request& req, Server& server, Route* route) {
     buildErrorResponse(403, req, server);
 }
 
-void Response::handleDELETE(Request& req, Server& server, Route* route) {
+void Response::_handleDELETE(Request& req, Server& server, Route* route) {
     std::string filePath = route->root + req.getContent();
 
     struct stat path_stat;
@@ -134,7 +111,7 @@ void Response::handleDELETE(Request& req, Server& server, Route* route) {
     }
 
     if (remove(filePath.c_str()) == 0) {
-        buildResponse(204, req, route, 0, 0);
+        _buildResponse(204, req, route, 0, 0, "text/html");
         DEBUG_LOG("File " << filePath << " deleted successfully");
     } else {
         if (errno == EBUSY) // file is in use/locked
@@ -144,23 +121,22 @@ void Response::handleDELETE(Request& req, Server& server, Route* route) {
     }
 }
 
-std::string Response::getResponse() {
+std::string Response::getResponse() const {
     std::ostringstream res;
     std::string statusMessage = "Unknown status";
 
-    std::map<int, std::string>::const_iterator it = statusMessages.find(this->_statusCode);
-    if (it != statusMessages.end())
+    std::map<int, std::string>::const_iterator it = _statusMessages.find(this->_statusCode);
+    if (it != _statusMessages.end())
         statusMessage = it->second;
 
     res << this->_httpVersion << " " << this->_statusCode << " " << statusMessage << "\r\n";
-    res << "Content-Length: " << this->_contentSize << "\r\n";
-    res << "Content-Type: text/html\r\n";
-    res << "Connection: close\r\n";
+    std::map<std::string, std::string>::const_iterator it2;
+    for (it2 = _headersMap.begin(); it2 != _headersMap.end(); ++it2)
+        res << it2->first << ":" << it2->second << "\r\n";
     res << "\r\n";
-
     res << this->_content;
     
-    return res.str();
+    return (res.str());
 }
 
 // ENTRY POINT INTO THE FILE
@@ -168,7 +144,7 @@ typedef void (Response::*HandlerFct)(Request&, Server&, Route* route);
 void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
-    Route* route = findRoute(req, server);
+    Route* route = _findRoute(req, server);
     if (!route)
     {
         (buildErrorResponse(404, req, server));
@@ -179,9 +155,9 @@ void Response::handleRequest(Request& req, Server& server) {
 
     static std::map<std::string, HandlerFct> handlers;
     if (handlers.empty()) {
-        handlers["GET"] = &Response::handleGET;
-        handlers["POST"] = &Response::handlePOST;
-        handlers["DELETE"] = &Response::handleDELETE;
+        handlers["GET"] = &Response::_handleGET;
+        handlers["POST"] = &Response::_handlePOST;
+        handlers["DELETE"] = &Response::_handleDELETE;
     }
 
     std::string method = req.getMethod();
@@ -191,7 +167,7 @@ void Response::handleRequest(Request& req, Server& server) {
         (this->*(it->second))(req, server, route);
     else
     {
-        buildErrorResponse(405, req, server);
+        buildErrorResponse(405, req, server); // WHAT TO PUT HERE AS MIMETYPE
         return;
     }
 }

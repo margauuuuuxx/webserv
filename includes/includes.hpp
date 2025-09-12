@@ -33,6 +33,7 @@
 # define MAX_REQUEST_SIZE 1048576
 # define MAX_REQUEST_LINE_SIZE 8192
 # define MAX_HEADERS_SIZE 65536
+# define TIMEOUT_SECONDS 30
 
 #ifdef DEBUG_MODE
     #define DEBUG_LOG(msg) std::cerr << msg << std::endl
