@@ -17,6 +17,14 @@ void Parser::parsefile(const std::string& filename){
 		}
 		tokenizer(file);
 		// printTokens();
+		// get the absolute path
+		char cwd_buffer[1024];
+		if (getcwd(cwd_buffer, sizeof(cwd_buffer)) == NULL) {
+			DEBUG_LOG(RED << "Error: " << RESET << "main: Could not get cwd");
+		}
+		//dans serveur il faut absolute rootpath
+		std::string	absoluteRootPath = cwd_buffer;
+		setAbsoluteRootPath(absoluteRootPath);
 		parser();
 		printServer();
 	}catch(std::exception& e){
@@ -85,14 +93,8 @@ void Parser::parser(){
 void Parser::parseServer(){
 	Server server;
 
-	char cwd_buffer[1024];
-	if (getcwd(cwd_buffer, sizeof(cwd_buffer)) == NULL) {
-		DEBUG_LOG(RED << "Error: " << RESET << "main: Could not get cwd");
-	}
-	//dans serveur il faut absolute rootpath
-	std::string	absoluteRootPath = cwd_buffer;
-	setAbsoluteRootPath(absoluteRootPath);
 	std::cout << "Server" << std::endl;
+	server.mainRoot = this->_absoluteRootPath;
 	_i++;
 	if (_tokens[_i] != "{")
 		throw std::runtime_error("dirrective \"server\" has no openning \"{\"");

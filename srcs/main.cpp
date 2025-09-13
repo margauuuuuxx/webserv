@@ -36,7 +36,6 @@ int main(int argc, char **argv) {
 
 
 	Parser parser;
-	parser.setAbsoluteRootPath(absoluteRootPath);
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
 	SocketArray sockets;
