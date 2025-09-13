@@ -41,12 +41,6 @@ class CGI {
         std::map<std::string, std::string>  getHeadersMap();
         const std::string&                  getParsedBody();
         const std::string&                  getHTTPVersion();
-        
-        //void	            handleCGI(Response &res, const std::string& filename, Request& req, Server& server, Route* route);
-        // char**              getEnvv() const;
-        // const std::string&  getCGIPath() const;
-        // const std::string&  getPathInfo() const;
-        // const std::string&  getQueryString() const;
 };
 
 void	handleCGI(Response& res, const std::string& filename, Request& req, Server& server, Route* route);
