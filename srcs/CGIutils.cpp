@@ -57,16 +57,6 @@ void	CGI::_vectToArray(const std::vector<std::string>& v) {
 	_envv[i] = NULL;
 }
 
-void    closePipes(int pipe1[2], int pipe2[2]) {
-    if (pipe1[0] != -1)
-        close(pipe1[0]);
-    if (pipe1[1] != -1)
-        close(pipe1[1]);
-    if (pipe2[0] != -1)
-        close(pipe2[0]);
-    if (pipe2[1] != -1)
-        close(pipe2[1]);
-}
 
 void	CGI::_readCGI(int fd) {
     char        buffer[4096];
@@ -77,12 +67,6 @@ void	CGI::_readCGI(int fd) {
     close(fd);
 }
 
-static int  stringToInt(const std::string &s) {
-    std::stringstream ss(s);
-    int num = 0;
-    ss >> num;
-    return (num);
-}
 
 int CGI::getStatusCode() { 
     std::map<std::string, std::string>::const_iterator it = _headersMap.find("Status");
@@ -101,3 +85,27 @@ std::map<std::string, std::string>  CGI::getHeadersMap() {
 const std::string&  CGI::getParsedBody() { return (this->_parsedBody); }
 
 const std::string&  CGI::getHTTPVersion() { return (_req.getVersion()); }
+
+int  stringToInt(const std::string &s) {
+    std::stringstream ss(s);
+    int num = 0;
+    ss >> num;
+    return (num);
+}
+
+std::string toString(int nbr) {
+    std::ostringstream oss;
+    oss << nbr;
+    return (oss.str());
+}
+
+void    closePipes(int pipe1[2], int pipe2[2]) {
+    if (pipe1[0] != -1)
+        close(pipe1[0]);
+    if (pipe1[1] != -1)
+        close(pipe1[1]);
+    if (pipe2[0] != -1)
+        close(pipe2[0]);
+    if (pipe2[1] != -1)
+        close(pipe2[1]);
+}

@@ -22,9 +22,9 @@ void	CGI::_setEnvv() {
 	envVector.push_back("SERVER_PROTOCOL=" + _req.getVersion());
 	envVector.push_back("REQUEST_METHOD=" + _req.getMethod());
 	envVector.push_back("SCRIPT_FILENAME=" + _scriptPath);
-	envVector.push_back("CONTENT_LENGTH=" + std::to_string(_req.getBody().size()));
+	envVector.push_back("CONTENT_LENGTH=" + toString(_req.getBody().size()));
 	envVector.push_back("SERVER_NAME=" + _server.host);
-	envVector.push_back("SERVER_PORT=" + std::to_string(_server.port));
+	envVector.push_back("SERVER_PORT=" + toString(_server.port));
 	envVector.push_back("REMOTE_ADDR=" + _req.getClientIP());
 
 	_setQueryString();
