@@ -34,12 +34,6 @@ int main(int argc, char **argv) {
 		return std::cout << "wron number of args" << std::endl, 1;	
 	}
 
-	char cwd_buffer[1024];
-	if (getcwd(cwd_buffer, sizeof(cwd_buffer)) == NULL) {
-		DEBUG_LOG(RED << "Error: " << RESET << "main: Could not get cwd");
-		return (1);
-	}
-	std::string	absoluteRootPath = cwd_buffer;
 
 	Parser parser;
 	parser.setAbsoluteRootPath(absoluteRootPath);

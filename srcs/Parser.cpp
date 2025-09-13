@@ -84,6 +84,14 @@ void Parser::parser(){
 
 void Parser::parseServer(){
 	Server server;
+
+	char cwd_buffer[1024];
+	if (getcwd(cwd_buffer, sizeof(cwd_buffer)) == NULL) {
+		DEBUG_LOG(RED << "Error: " << RESET << "main: Could not get cwd");
+	}
+	//dans serveur il faut absolute rootpath
+	std::string	absoluteRootPath = cwd_buffer;
+	setAbsoluteRootPath(absoluteRootPath);
 	std::cout << "Server" << std::endl;
 	_i++;
 	if (_tokens[_i] != "{")
