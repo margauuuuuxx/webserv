@@ -10,6 +10,11 @@ Response::~Response() {}
 void Response::_handleGET(Request& req, Server& server, Route* route) {
     std::string resourcePath = route->root + req.getContent();
 
+    if (!resourcePath.empty())
+        DEBUG_LOG(YELLOW << "GET resource path: " << resourcePath << RESET);
+    else 
+        DEBUG_LOG(RED << "GET resource path empty" << RESET);
+
     struct stat path_stat;
     if (stat(resourcePath.c_str(), &path_stat) != 0) {
         buildErrorResponse(404, req, server);

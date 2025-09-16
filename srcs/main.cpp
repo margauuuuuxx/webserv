@@ -31,9 +31,8 @@ void signalHandler(int sig) {
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
-		return std::cout << "wron number of args" << std::endl, 1;	
+		return std::cout << RED << "Error: " << RESET << "wrong number of args" << std::endl, 1;	
 	}
-
 
 	Parser parser;
 	parser.parsefile(argv[1]);
@@ -46,9 +45,10 @@ int main(int argc, char **argv) {
 		Poller poller;
 		for (size_t i = 0; i < servers.size() ; i++) {
 			try {
-				sockets.pushBack( new Socket(servers[i].port));
-				sockets[i]->addServer(servers[i]);
-				poller.addFd(sockets[i]->getFd(), POLLIN);
+				Socket* newSocket = new Socket(servers[i].port);
+				newSocket->addServer(servers[i]);
+				poller.addFd(newSocket->getFd(), POLLIN);
+				sockets.pushBack(newSocket);
 				std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
 			}
 			catch (const std::exception& e) {

@@ -8,9 +8,15 @@ Socket::Socket(int port) {
 	listenSocketFd = -1;
 	server = NULL;
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);//(domaine, type, protocol)
+
 	if (sockfd < 0) {
 		throw std::runtime_error("error while creating socket");
 	}
+
+	int opt = 1;
+	if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) 
+		throw std::runtime_error("Error: setting SO_REUSEADDR");
+
 	addr.sin_family = AF_INET;
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
