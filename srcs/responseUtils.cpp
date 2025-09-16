@@ -124,11 +124,22 @@ bool readFile(const std::string& path, std::string& content) {
 
 Route*  Response::_findRoute(Request& req, Server &server) const {
     std::string location = req.getContent();
+    DEBUG_LOG("Trying to find route for location: " << location);
+   
+    Route*  bestMatch = NULL;
+    size_t  longestMatch = 0;
+
     for (size_t i = 0; i < server.routes.size(); ++i) {
-        if (server.routes[i].location == location)
-            return &server.routes[i];
+        const std::string& routeLocation = server.routes[i].location;
+        if (location.rfind(routeLocation, 0) == 0) {
+            if (routeLocation.length() > longestMatch) {
+                longestMatch = routeLocation.length();
+                bestMatch = &server.routes[i];
+            }
+        }
     }
-    return (NULL);
+    DEBUG_LOG("Best match location = " << bestMatch->location);
+    return (bestMatch);
 }
 
 std::string Response::_generateAutoIndex(const std::string& path, const std::string& reqURL) const {

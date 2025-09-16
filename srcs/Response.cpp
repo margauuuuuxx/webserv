@@ -150,8 +150,10 @@ void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
     Route* route = _findRoute(req, server);
+    DEBUG_LOG(YELLOW << "Found route = " << route->location << RESET);
     if (!route)
     {
+        DEBUG_LOG(RED << "Error: " << RESET << "No route has been found for " << req.getContent());
         (buildErrorResponse(404, req, server));
         return;
     }
