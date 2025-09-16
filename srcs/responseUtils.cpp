@@ -124,6 +124,11 @@ bool readFile(const std::string& path, std::string& content) {
 
 Route*  Response::_findRoute(Request& req, Server &server) const {
     std::string location = req.getContent();
+    if (location.empty()) {
+        DEBUG_LOG(RED << "Error: " << RESET << "Empty location string in _findRoute");
+        return (NULL);
+    }
+    
     DEBUG_LOG("Trying to find route for location: " << location);
    
     Route*  bestMatch = NULL;
