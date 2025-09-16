@@ -1,23 +1,30 @@
 #pragma once
 
+#include <algorithm>
+#include <arpa/inet.h>
+#include <csignal>
+#include <cstddef>
+#include <cstdlib>
+#include <cstring>
+#include <ctime>
+#include <dirent.h>
+#include <exception>
+#include <fstream>
+#include <iostream>
+#include <map>
+#include <netinet/in.h> // for specific sockaddr strcuts 
+#include <poll.h>
+#include <set>
+#include <signal.h>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 #include <sys/select.h>
 #include <sys/socket.h>
-#include <iostream>
-#include <stdexcept>
-#include <netinet/in.h> // for specific sockaddr strcuts 
-#include <cstring>
-#include <sstream>
-#include <fstream>
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <unistd.h>
-#include <cstdlib>
-#include <string>
-#include <arpa/inet.h>
-#include <signal.h>
 #include <vector>
-#include <map>
-#include <poll.h>
-#include <ctime>
-#include <set>
 
 # define RED "\033[31m"
 # define GREEN "\033[32m"
@@ -26,15 +33,22 @@
 # define MAX_REQUEST_SIZE 1048576
 # define MAX_REQUEST_LINE_SIZE 8192
 # define MAX_HEADERS_SIZE 65536
+# define TIMEOUT_SECONDS 30
 
-#include "Client.hpp"
-#include "Config.hpp"
+#ifdef DEBUG_MODE
+    #define DEBUG_LOG(msg) std::cerr << msg << std::endl
+#else 
+    #define DEBUG_LOG(msg)
+#endif
+
+#include "CGI.hpp"
+#include "CGIutils.hpp"
+#include "Parser.hpp"
+#include "Poller.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "responseUtils.hpp"
 #include "Server.hpp"
+#include "Socket.hpp"
+#include "SocketArray.hpp"
 #include "utils.hpp"
-
-char	*ft_itoa(int n);
-std::string makeError(int code, const std::string& message);
-std::string toLower(std::string line, size_t end);
-std::string ft_strtrim(std::string s);

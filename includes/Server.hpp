@@ -2,17 +2,28 @@
 
 #include "includes.hpp"
 
-class Server
-{
-	private:
-		int	_sockfd;
-		sockaddr_in	_address;
-		int	_port;
-		std::vector<struct pollfd> _pollFd;
-	public:
-		Server(void);
-		~Server(void);
+struct Route{
+	std::string 				location;
+	std::vector<std::string>	allowedMethods;
+	std::string 				root;
+	std::vector<std::string>	index;
+	bool 						autoindex;
+	std::vector<std::string>	cgiExtension;
+	std::string 				cgiPath;
+	bool 						uploadEnabled;
+	std::string 				uploadStore;
+};
 
-		void	setup(void);
-		void	run(void);
+class Server{
+public:
+	int 						port;
+	std::string 				host;
+	std::vector<std::string>	serverNames;
+	std::map<int, std::string>	errorPages;  
+	int							clientMaxBodySize;
+	std::vector<Route>			routes;
+	std::map<int, Request>		requests;
+	std::string					mainRoot;
+	
+	void printServerInfos() const;
 };

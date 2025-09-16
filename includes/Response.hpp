@@ -1,30 +1,41 @@
-#pragma once 
+#pragma once
 
 #include "includes.hpp"
-#include "Request.hpp"
-#include "Config.hpp"
-
-/*
-    This class is responsible for generating HTTPS responses :
-        - based on requests and server state
-        - handles file serving/errors/headings
-*/
 
 class Request;
-class Config;
+class Server;
+struct Route;
+class CGI;
 
-class Response
-{
-    private:
-        Response();
-        Response(const Response &other);
-        Response& operator=(const Response &other);
-		const Request &_req;
-		std::string _response;
+extern const std::map<int, std::string> statusMessages;
 
-    public:
-        Response(const Request& req);
-        ~Response();
+class Response {
+public:
+    Response();
+    ~Response();
 
-		std::string const &getResponse() const;
+    void        handleRequest(Request& req, Server& server);
+    std::string getResponse() const;
+    void        buildErrorResponse(int code, Request& req, Server& server);
+    void        buildCGIResponse(CGI &CGIobj);
+
+private:
+    void                _handleGET(Request& req, Server& server, Route* route);
+    void                _handlePOST(Request& req, Server& server, Route* route);
+    void                _handleDELETE(Request& req, Server& server, Route* route);
+    void                _buildResponse(int statusCode, Request& req, Route* route, bool isAutoIndex, bool upload, const std::string& MIMEType);
+    Route*              _findRoute(Request& req, Server &server) const;
+    std::string         _generateAutoIndex(const std::string& path, const std::string& reqURL) const;
+    void                _setHeaders(const std::string& MIMEType);
+    void                _initMIMETypes();
+    void                _initStatusMessages();
+    std::string         _getMIMEType(const std::string& path) const;
+
+    std::string                         _content;
+    std::string                         _httpVersion;
+    size_t                              _contentSize;
+    size_t                              _statusCode;
+    std::map<std::string, std::string>  _headersMap;
+    std::map<std::string, std::string>  _MIMETypes;
+    std::map<int, std::string>          _statusMessages;
 };

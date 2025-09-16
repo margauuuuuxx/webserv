@@ -1,5 +1,8 @@
-#include "../includes/Request.hpp"
 #include "../includes/includes.hpp"
+
+/*
+	This class is responsible for building the appropriate HTTP response based on the parsed Request object and the Server config.
+*/
 
 Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
@@ -54,6 +57,10 @@ std::string	const	&Request::getMethod(void) const {
 	return (this->_method);
 }
 
+std::string const	&Request::getClientIP(void) const {
+	return (this->_clientIP);
+}
+ 
 std::string const &Request::getContent(void) const{
 	return (this->_content);
 }
@@ -101,6 +108,10 @@ void Request::setContentLen(size_t len){
 
 void Request::setTransferEncoding(bool state){
 	this->_transferEncoding = state;
+}
+
+void	Request::setClientIP(const std::string& ip) {
+	this->_clientIP = ip;
 }
 
 int Request::assignError(std::string error){
@@ -390,7 +401,7 @@ void Request::parse(void){
 					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
 				std::string key = toLower(line, colon);
 				currentKey = key;
-				std::string value = ft_strtrim(line.substr(colon + 1));
+				std::string value = ftStrtrim(line.substr(colon + 1));
 				std::map<std::string, std::string>::iterator it;
 				if (key == "authorization" || key == "proxy-authorization")
 					this->_multiHeaders.insert(std::pair<std::string, std::string>(key, value));

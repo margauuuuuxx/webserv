@@ -5,3 +5,7 @@
 void        errorExit(std::string message);
 std::string loadFile(const std::string &path);
 std::string intToString(const std::string &str);
+char	    *ftItoa(int n);
+std::string makeError(int code, const std::string& message);
+std::string toLower(std::string line, size_t end);
+std::string ftStrtrim(std::string s);
