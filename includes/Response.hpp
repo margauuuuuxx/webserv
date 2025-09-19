@@ -30,6 +30,7 @@ private:
     void                _initMIMETypes();
     void                _initStatusMessages();
     std::string         _getMIMEType(const std::string& path) const;
+    void                _constructRelativePath(Request& req, Route* route);
 
     std::string                         _content;
     std::string                         _httpVersion;

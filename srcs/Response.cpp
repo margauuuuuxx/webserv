@@ -30,8 +30,6 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             DEBUG_LOG("indexPath: " << indexPath);
             if (access(indexPath.c_str(), F_OK) == 0)
                 if (readFile(indexPath, this->_content)) {
-                    DEBUG_LOG(RED << "HERE" << RESET);
-                    DEBUG_LOG("good indexPath: " << indexPath);
                     _buildResponse(200, req, 0, _getMIMEType(indexPath));
                     indexFound = 1;
                     break;
@@ -60,7 +58,6 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             return;
         }
         else {
-            DEBUG_LOG(RED << "HERE 22" << RESET);
             std::string MIMEType = _getMIMEType(resourcePath);
             if (readFile(resourcePath, this->_content))
                 _buildResponse(200, req, 0, MIMEType);
@@ -156,8 +153,6 @@ typedef void (Response::*HandlerFct)(Request&, Server&, Route* route);
 void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
-    DEBUG_LOG(YELLOW << "Location before _findRoute = " << req.getContent() << RESET);
-
     Route* route = _findRoute(req, server);
     if (!route)
     {
@@ -168,28 +163,7 @@ void Response::handleRequest(Request& req, Server& server) {
     }
     DEBUG_LOG(YELLOW << "Found route = " << route->location << RESET);
 
-    std::string path;
-    std::string content = req.getContent();
-    std::string location = route->location;
-    DEBUG_LOG("BEFORE---------" << std::endl << "Content = " << content << std::endl << "Route location = " << route->location);
-    
-    std::string relativePath = content;
-    if (content.rfind(location, 0) == 0) // if content starts with location
-        relativePath = content.substr(location.length());
-
-    path = route->root;
-
-    if (!path.empty() && path[path.size() - 1] == '/')
-        path.erase(path.size() - 1);
-
-    if (!relativePath.empty() && relativePath[0] != '/') // add a slah if it doesnt start with one
-        path += '/';
-
-    path += relativePath;
-
-    DEBUG_LOG(YELLOW << "constructed path = " << path << RESET);
-
-    route->path = path;
+    _constructRelativePath(req, route);
 
     DEBUG_LOG("===RESPONSE SETUP===");
 
@@ -207,7 +181,7 @@ void Response::handleRequest(Request& req, Server& server) {
         (this->*(it->second))(req, server, route);
     else
     {
-        buildErrorResponse(405, req, server); // WHAT TO PUT HERE AS MIMETYPE
+        buildErrorResponse(405, req, server);
         req.reset();
         return;
     }

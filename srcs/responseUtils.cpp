@@ -144,6 +144,31 @@ Route*  Response::_findRoute(Request& req, Server &server) const {
     return (bestMatch);
 }
 
+void    Response::_constructRelativePath(Request &req, Route* route) {
+    std::string path;
+    std::string content = req.getContent();
+    std::string location = route->location;
+    DEBUG_LOG("BEFORE---------" << std::endl << "Content = " << content << std::endl << "Route location = " << route->location);
+    
+    std::string relativePath = content;
+    if (content.rfind(location, 0) == 0) // if content starts with location
+        relativePath = content.substr(location.length());
+
+    path = route->root;
+
+    if (!path.empty() && path[path.size() - 1] == '/')
+        path.erase(path.size() - 1);
+
+    if (!relativePath.empty() && relativePath[0] != '/') // add a slah if it doesnt start with one
+        path += '/';
+
+    path += relativePath;
+
+    DEBUG_LOG(YELLOW << "constructed path = " << path << RESET);
+
+    route->path = path;
+}
+
 std::string Response::_generateAutoIndex(const std::string& path, const std::string& reqURL) const {
     //DEBUG_LOG(YELLOW << "AUTOINDEX" << RESET);
 
