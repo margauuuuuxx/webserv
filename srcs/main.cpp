@@ -11,7 +11,6 @@ std::vector<char> handleRequest(char* buffer, Server& server, int client_fd){
 		request.parse();
 		std::cout << "SEND:" << std::endl;
 		std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
-		std::cout << "content: " << request.getContent() << std::endl;
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();

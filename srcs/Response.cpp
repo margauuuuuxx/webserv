@@ -8,11 +8,11 @@ Response::Response() : _contentSize(0), _statusCode(0) {
 Response::~Response() {}
 
 void Response::_handleGET(Request& req, Server& server, Route* route) {
-    std::string resourcePath = route->path + req.getContent(); // PARSER 
+    std::string resourcePath = route->path; // PARSER 
     // HAVING THE RIGHT PATH FOR /hello/index.html --> www/index.html
 
     if (!resourcePath.empty())
-        DEBUG_LOG(YELLOW << "GET resource path: " << resourcePath << RESET);
+        DEBUG_LOG(YELLOW << "GET" << std::endl << RESET << "Route path = " << route->path << std::endl << "Content = " << req.getContent() << std::endl << "GET resource path: " << resourcePath << std::endl << YELLOW << "-----------" << RESET);
     else 
         DEBUG_LOG(RED << "GET resource path empty" << RESET);
 
@@ -157,8 +157,6 @@ void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
     DEBUG_LOG(YELLOW << "Location before _findRoute = " << req.getContent() << RESET);
-    DEBUG_LOG("Test");
-    DEBUG_LOG("test 2");
 
     Route* route = _findRoute(req, server);
     if (!route)
@@ -172,15 +170,26 @@ void Response::handleRequest(Request& req, Server& server) {
 
     std::string path;
     std::string content = req.getContent();
-    std::string::size_type pos = content.find(route->location);
-    if (pos != std::string::npos) {
-        content.erase(pos, route->location.length());
-        route->path = content;
-    }
-    else
-        route->path = route->root;
-    DEBUG_LOG(YELLOW << "after removing found route to content = " << content << RESET);
+    std::string location = route->location;
+    DEBUG_LOG("BEFORE---------" << std::endl << "Content = " << content << std::endl << "Route location = " << route->location);
+    
+    std::string relativePath = content;
+    if (content.rfind(location, 0) == 0) // if content starts with location
+        relativePath = content.substr(location.length());
 
+    path = route->root;
+
+    if (!path.empty() && path[path.size() - 1] == '/')
+        path.erase(path.size() - 1);
+
+    if (!relativePath.empty() && relativePath[0] != '/') // add a slah if it doesnt start with one
+        path += '/';
+
+    path += relativePath;
+
+    DEBUG_LOG(YELLOW << "constructed path = " << path << RESET);
+
+    route->path = path;
 
     DEBUG_LOG("===RESPONSE SETUP===");
 
