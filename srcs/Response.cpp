@@ -8,7 +8,8 @@ Response::Response() : _contentSize(0), _statusCode(0) {
 Response::~Response() {}
 
 void Response::_handleGET(Request& req, Server& server, Route* route) {
-    std::string resourcePath = route->root + req.getContent();
+    std::string resourcePath = route->path + req.getContent(); // PARSER 
+    // HAVING THE RIGHT PATH FOR /hello/index.html --> www/index.html
 
     if (!resourcePath.empty())
         DEBUG_LOG(YELLOW << "GET resource path: " << resourcePath << RESET);
@@ -21,7 +22,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
         return;
     }
 
-    if (S_ISDIR(path_stat.st_mode))
+    if (S_ISDIR(path_stat.st_mode)) // dir
     {
         bool indexFound = 0;
         for (size_t i = 0; i < route->index.size(); i++) {
@@ -29,6 +30,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             DEBUG_LOG("indexPath: " << indexPath);
             if (access(indexPath.c_str(), F_OK) == 0)
                 if (readFile(indexPath, this->_content)) {
+                    DEBUG_LOG(RED << "HERE" << RESET);
                     DEBUG_LOG("good indexPath: " << indexPath);
                     _buildResponse(200, req, route, 0, 0, _getMIMEType(indexPath));
                     indexFound = 1;
@@ -52,12 +54,13 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             }
         }
     }
-    else if (S_ISREG(path_stat.st_mode)) {
+    else if (S_ISREG(path_stat.st_mode)) { // file 
         if (isCGIReq(req.getContent(), route)) {
             handleCGI(*this, resourcePath, req, server, route);
             return;
         }
         else {
+            DEBUG_LOG(RED << "HERE 22" << RESET);
             std::string MIMEType = _getMIMEType(resourcePath);
             if (readFile(resourcePath, this->_content))
                 _buildResponse(200, req, route, 0, 0, MIMEType);
@@ -166,6 +169,18 @@ void Response::handleRequest(Request& req, Server& server) {
         return;
     }
     DEBUG_LOG(YELLOW << "Found route = " << route->location << RESET);
+
+    std::string path;
+    std::string content = req.getContent();
+    std::string::size_type pos = content.find(route->location);
+    if (pos != std::string::npos) {
+        content.erase(pos, route->location.length());
+        route->path = content;
+    }
+    else
+        route->path = route->root;
+    DEBUG_LOG(YELLOW << "after removing found route to content = " << content << RESET);
+
 
     DEBUG_LOG("===RESPONSE SETUP===");
 

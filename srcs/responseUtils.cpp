@@ -148,6 +148,8 @@ Route*  Response::_findRoute(Request& req, Server &server) const {
 }
 
 std::string Response::_generateAutoIndex(const std::string& path, const std::string& reqURL) const {
+    DEBUG_LOG(YELLOW << "AUTOINDEX" << RESET);
+
     std::ostringstream oss;
     oss << "<!DOCTYPE html>\n";
     oss << "<html lang=\"en\">\n";

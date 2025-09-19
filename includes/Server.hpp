@@ -12,13 +12,14 @@ struct Route{
 	std::string 				cgiPath;
 	bool 						uploadEnabled;
 	std::string 				uploadStore;
+	std::string					path;
 };
 
 class Server{
 public:
 	Server();
 	~Server();
-	
+
 	int 						port;
 	std::string 				host;
 	std::vector<std::string>	serverNames;
