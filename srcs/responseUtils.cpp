@@ -265,6 +265,7 @@ std::string Response::_generateAutoIndex(const std::string& path, const std::str
 
 bool    isCGIReq(const std::string& resource, const Route* route)
 {
+    DEBUG_LOG(RED << "CGI REQ" << RESET);
     if (route->cgiPath.empty())
         return (false);
 
