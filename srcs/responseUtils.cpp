@@ -28,13 +28,10 @@ void    Response::_initMIMETypes() {
     _MIMETypes[".txt"] = "text/plain";
 }
 
-void    Response::_buildResponse(int statusCode, Request& req, Route* route, bool isAutoIndex, bool upload, const std::string& MIMEType) {
+void    Response::_buildResponse(int statusCode, Request& req, bool upload, const std::string& MIMEType) {
     this->_statusCode = statusCode;
     this->_httpVersion = req.getVersion();
-    if (isAutoIndex) {
-        std::string resourcePath = route->root + req.getContent();
-        this->_content = _generateAutoIndex(resourcePath, req.getContent());
-    }
+
     if (upload)
         this->_content = "<html><body><h1>201Created</h1></body></html>";
     this->_contentSize = this->_content.size();

@@ -32,21 +32,21 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
                 if (readFile(indexPath, this->_content)) {
                     DEBUG_LOG(RED << "HERE" << RESET);
                     DEBUG_LOG("good indexPath: " << indexPath);
-                    _buildResponse(200, req, route, 0, 0, _getMIMEType(indexPath));
+                    _buildResponse(200, req, 0, _getMIMEType(indexPath));
                     indexFound = 1;
                     break;
                 }
         }
         if (!indexFound) {
             if (route->autoindex) {
-                std::string resourcePath = route->root + req.getContent();
-                std::string autoIndexContent = _generateAutoIndex(resourcePath, req.getContent());
-                if (autoIndexContent.empty()) {
-                    DEBUG_LOG("Autoindex string empty");
+                DEBUG_LOG("AUTOINDEX BLOCK");
+                this->_content = _generateAutoIndex(resourcePath, req.getContent());
+                if (this->_content.empty()) {
+                    DEBUG_LOG(RED << "Error: " << RESET << "Autoindex string empty");
                     buildErrorResponse(500, req, server);
                 }
                 else 
-                    _buildResponse(200, req, route, 1, 0, "text/html");
+                    _buildResponse(200, req, 0, "text/html");
             }
             else {
                 DEBUG_LOG("NOT found and no autoindex");
@@ -63,7 +63,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             DEBUG_LOG(RED << "HERE 22" << RESET);
             std::string MIMEType = _getMIMEType(resourcePath);
             if (readFile(resourcePath, this->_content))
-                _buildResponse(200, req, route, 0, 0, MIMEType);
+                _buildResponse(200, req, 0, MIMEType);
             else 
                 buildErrorResponse(403, req, server);
         }
@@ -95,7 +95,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
         if (newFile.is_open()) {
             newFile.write(req.getBody().c_str(), req.getBody().length());
             newFile.close();
-            _buildResponse(201, req, route, 0, 1, "text/html");
+            _buildResponse(201, req, 1, "text/html");
         }
         else 
             buildErrorResponse(500, req, server);
@@ -119,7 +119,7 @@ void Response::_handleDELETE(Request& req, Server& server, Route* route) {
     }
 
     if (remove(filePath.c_str()) == 0) {
-        _buildResponse(204, req, route, 0, 0, "text/html");
+        _buildResponse(204, req, 0, "text/html");
         DEBUG_LOG("File " << filePath << " deleted successfully");
     } else {
         if (errno == EBUSY) // file is in use/locked
