@@ -7,7 +7,7 @@ public:
 	SocketArray();
 	~SocketArray();
 	
-	void	pushBack(Socket* s);
+	void	push_back(Socket* s);
 	Socket*	operator [] (size_t i);
 	size_t	size() const;
 	

@@ -126,7 +126,7 @@ void Response::_handleDELETE(Request& req, Server& server, Route* route) {
     }
 }
 
-std::string Response::getResponse() const {
+std::vector<char> Response::getResponse() const {
     std::ostringstream res;
     std::string statusMessage = "Unknown status";
 
@@ -141,7 +141,11 @@ std::string Response::getResponse() const {
     res << "\r\n";
     res << this->_content;
     
-    return (res.str());
+    std::string resStr = res.str();
+    std::vector<char> resVector(resStr.begin(), resStr.end());
+    // CONVERTIR EN OCTETS 
+
+    return (resVector);
 }
 
 // ENTRY POINT INTO THE FILE

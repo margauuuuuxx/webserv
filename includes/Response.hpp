@@ -15,7 +15,7 @@ public:
     ~Response();
 
     void        handleRequest(Request& req, Server& server);
-    std::string getResponse() const;
+    std::vector<char> getResponse() const;
     void        buildErrorResponse(int code, Request& req, Server& server);
     void        buildCGIResponse(CGI &CGIobj);
 

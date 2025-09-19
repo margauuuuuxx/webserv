@@ -116,11 +116,11 @@ int main(int argc, char **argv) {
 
 							buffer[bytes] = '\0';
 							std::cout << "===REQUETE===" << std::endl;
-							std::cout << "Requête reçue sur port " << sock->getServer().port << std::endl;
+							std::cout << "Requête reçue sur port " << sock->getServer()->port << std::endl;
 							std::cout << "Client fd = " << fd << std::endl;
 							std::cout << "Message reçu: " << buffer;
 
-							std::vector<char> response = handleRequest(buffer, sock->getServer(), fd);
+							std::vector<char> response = handleRequest(buffer, *(sock->getServer()), fd);
 							if (!response.empty()) {
 								pendingResponses[fd] = response;
 								poller.modifyFd(fd, POLLOUT); // passe en écriture
