@@ -7,6 +7,34 @@ CGI::CGI(Request &req, Server& server, const std::string& scriptPath, Response& 
 }
 
 CGI::~CGI() {
+	if (_pid > 0) {
+		pid_t child_pid;
+		int status = 0;
+		time_t startTime = time(NULL);
+
+		while (true) {
+			child_pid = waitpid(_pid, &status, WNOHANG);
+			if (child_pid == _pid)
+				break;
+			if (time(NULL) - startTime > TIMEOUT_SECONDS) {
+				kill(_pid, SIGKILL);
+				_res.buildErrorResponse(504, _req, _server); // 504 Gateway timeout
+				close(_pipe_out_fd);
+				DEBUG_LOG(RED << "Error: " << RESET << "CGI timeout");
+				return;
+			}
+			usleep(10000);
+		}
+		
+		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+			_res.buildErrorResponse(500, _req, _server); // 500 Internal Server Error
+			return;
+		}
+		
+		_readCGI(_pipe_out_fd);	
+		_parse();
+	}
+
 	if (_envv != NULL) {
 		for (size_t i =0; _envv[i] != NULL; ++i)
 			free(_envv[i]);
@@ -111,33 +139,37 @@ void	CGI::execute(Route* route) {
 		if (!_req.getBody().empty())
 			write(pipe_in[1], _req.getBody().c_str(), _req.getBody().length());
 		close(pipe_in[1]);
-
-		pid_t child_pid;
-		int status = 0;
-		time_t startTime = time(NULL);
-
-		while (true) {
-			child_pid = waitpid(pid, &status, WNOHANG);
-			if (child_pid == pid)
-				break;
-			if (time(NULL) - startTime > TIMEOUT_SECONDS) {
-				kill(pid, SIGKILL);
-				_res.buildErrorResponse(504, _req, _server); // 504 Gateway timeout
-				close(pipe_out[0]);
-				DEBUG_LOG(RED << "Error: " << RESET << "CGI timeout");
-				return;
-			}
-			usleep(10000);
+		
+		_pid = pid;
+		_pipe_out_fd = pipe_out[0];
 		}
 
-		if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
-			_res.buildErrorResponse(500, _req, _server); // 500 Internal Server Error
-			return;
-		}
+	// 	pid_t child_pid;
+	// 	int status = 0;
+	// 	time_t startTime = time(NULL);
 
-		_readCGI(pipe_out[0]);	
-		_parse();
-	}
+	// 	while (true) {
+	// 		child_pid = waitpid(pid, &status, WNOHANG);
+	// 		if (child_pid == pid)
+	// 			break;
+	// 		if (time(NULL) - startTime > TIMEOUT_SECONDS) {
+	// 			kill(pid, SIGKILL);
+	// 			_res.buildErrorResponse(504, _req, _server); // 504 Gateway timeout
+	// 			close(pipe_out[0]);
+	// 			DEBUG_LOG(RED << "Error: " << RESET << "CGI timeout");
+	// 			return;
+	// 		}
+	// 		usleep(10000);
+	// 	}
+
+	// 	if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
+	// 		_res.buildErrorResponse(500, _req, _server); // 500 Internal Server Error
+	// 		return;
+	// 	}
+
+	// 	_readCGI(pipe_out[0]);	
+	// 	_parse();
+	// }
 }
 
 void	handleCGI(Response& res, const std::string& filename, Request& req, Server& server, Route* route) {

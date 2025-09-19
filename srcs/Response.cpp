@@ -149,6 +149,10 @@ typedef void (Response::*HandlerFct)(Request&, Server&, Route* route);
 void Response::handleRequest(Request& req, Server& server) {
     this->_httpVersion = req.getVersion();
 
+    DEBUG_LOG(YELLOW << "Location before _findRoute = " << req.getContent() << RESET);
+    DEBUG_LOG("Test");
+    DEBUG_LOG("test 2");
+
     Route* route = _findRoute(req, server);
     if (!route)
     {

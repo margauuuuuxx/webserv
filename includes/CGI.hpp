@@ -22,6 +22,8 @@ class CGI {
         std::string                         _CGIoutput;
         std::string                         _parsedBody;
         std::map<std::string, std::string>  _headersMap;
+        pid_t                               _pid;
+        int                                 _pipe_out_fd;
 
         CGI();
         void    _parse();
