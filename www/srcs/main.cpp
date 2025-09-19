@@ -1,4 +1,17 @@
-#include "../includes/includes.hpp"
+#include "../includes/Parser.hpp"
+#include "../includes/Response.hpp"
+#include "../includes/Poller.hpp"
+#include "../includes/Socket.hpp"
+#include "../includes/SocketErray.hpp"
+#include <cstddef>
+#include <iostream>
+#include <stdexcept>
+#include <string>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <cstring>
+#include <vector>
+#include <csignal>
 
 volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
@@ -35,13 +48,14 @@ void signalHandler(int sig) {
 
 int main(int argc, char **argv) {
 	if (argc != 2) {
-		return std::cout << RED << "Error: " << RESET << "wrong number of args" << std::endl, 1;	
+		std::cout << "wrong number of args" << std::endl;
+		return 1;
 	}
 
 	Parser parser;
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
-	SocketArray sockets;
+	SocketErray sockets;
 	std::map<int, Socket*> fdToSocket;
 	std::map<int, std::vector<char> > pendingResponses; // stocke les réponses en attente
 
@@ -110,9 +124,6 @@ int main(int argc, char **argv) {
 						std::map<int, Socket*>::iterator it = fdToSocket.find(fd);
 						if (it != fdToSocket.end()) {
 							Socket* sock = it->second;
-							Server* server = sock->getServer();
-							Request& request = server->requests[fd];
-							request.setClientIP(sock->getClientIP());
 
 							buffer[bytes] = '\0';
 							std::cout << "===REQUETE===" << std::endl;

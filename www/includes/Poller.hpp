@@ -1,6 +1,8 @@
-#pragma once
+#ifndef POLLER_HPP
+#define POLLER_HPP
 
-#include "includes.hpp"
+#include <vector>
+#include <poll.h>
 
 class Poller {
 public:
@@ -15,4 +17,10 @@ public:
 
 private:
     std::vector<struct pollfd> _fds;
+
+    Poller(const Poller&);
+    Poller& operator=(const Poller&);
 };
+
+#endif
+

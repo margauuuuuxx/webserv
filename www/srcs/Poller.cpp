@@ -1,10 +1,7 @@
-#include "../includes/includes.hpp"
-
-/*
-    This class is responsible for the I/O multiplexing of the server.
-    It wraps the poll() system call and holds a list of file descriptors to monitor.
-    The server will use this class to wait for activity on any of the sockets.
-*/
+#include "../includes/Poller.hpp"
+#include <unistd.h>
+#include <stdexcept>
+#include <algorithm>
 
 Poller::Poller() {}
 

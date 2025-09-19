@@ -1,3 +1,4 @@
+#include "../includes/Request.hpp"
 #include "../includes/includes.hpp"
 
 Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos), _requestFinished(false){}
@@ -53,10 +54,6 @@ std::string	const	&Request::getMethod(void) const {
 	return (this->_method);
 }
 
-std::string const	&Request::getClientIP(void) const {
-	return (this->_clientIP);
-}
- 
 std::string const &Request::getContent(void) const{
 	return (this->_content);
 }
@@ -105,11 +102,6 @@ void Request::setContentLen(size_t len){
 void Request::setTransferEncoding(bool state){
 	this->_transferEncoding = state;
 }
-
-void	Request::setClientIP(const std::string& ip) {
-	this->_clientIP = ip;
-}
-
 int Request::assignError(std::string error){
 	this->_toParse.assign(error);
 	this->_error = true;

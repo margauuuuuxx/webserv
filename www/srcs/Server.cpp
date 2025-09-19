@@ -1,13 +1,3 @@
-#include "../includes/includes.hpp"
-
-/*
-	This class is mostly a data structure.
-	It holds all the configuration for a single virtual server.
-	--> port, host, error pages & defined routes
-
-	The route struct defines how the server should behave for a specific URL path.
-*/
-
 #include "../includes/Server.hpp"
 Server::Server(){}
 Server::~Server(){}
@@ -15,28 +5,28 @@ void Server::printServerInfos() const {
 	std::cout << "=== SERVER CONFIGURATION ===" << std::endl;
 	std::cout << "Host: " << host << std::endl;
 	std::cout << "Port: " << port << std::endl;
-	std::cout << "Client Max Body Size: " << clientMaxBodySize << " bytes" << std::endl;
+	std::cout << "Client Max Body Size: " << client_max_body_size << " bytes" << std::endl;
 
 	// Print server names
 	std::cout << "Server Names: ";
-	if (serverNames.empty()) {
+	if (server_names.empty()) {
 		std::cout << "None";
 	} else {
-		for (size_t i = 0; i < serverNames.size(); ++i) {
-			std::cout << serverNames[i];
-			if (i < serverNames.size() - 1) std::cout << ", ";
+		for (size_t i = 0; i < server_names.size(); ++i) {
+			std::cout << server_names[i];
+			if (i < server_names.size() - 1) std::cout << ", ";
 		}
 	}
 	std::cout << std::endl;
 
 	// Print error pages
 	std::cout << "Error Pages:" << std::endl;
-	if (errorPages.empty()) {
+	if (error_pages.empty()) {
 		std::cout << "  None defined" << std::endl;
 	} else {
 		// C++98: Use explicit iterator instead of auto
-		for (std::map<int, std::string>::const_iterator it = errorPages.begin(); 
-		it != errorPages.end(); ++it) {
+		for (std::map<int, std::string>::const_iterator it = error_pages.begin(); 
+		it != error_pages.end(); ++it) {
 			std::cout << "  " << it->first << " -> " << it->second << std::endl;
 		}
 	}
@@ -48,12 +38,12 @@ void Server::printServerInfos() const {
 
 		// Allow methods
 		std::cout << "    Allowed Methods: ";
-		if (routes[i].allowedMethods.empty()) {
+		if (routes[i].allow_methods.empty()) {
 			std::cout << "None";
 		} else {
-			for (size_t j = 0; j < routes[i].allowedMethods.size(); ++j) {
-				std::cout << routes[i].allowedMethods[j];
-				if (j < routes[i].allowedMethods.size() - 1) std::cout << ", ";
+			for (size_t j = 0; j < routes[i].allow_methods.size(); ++j) {
+				std::cout << routes[i].allow_methods[j];
+				if (j < routes[i].allow_methods.size() - 1) std::cout << ", ";
 			}
 		}
 		std::cout << std::endl;
@@ -80,19 +70,19 @@ void Server::printServerInfos() const {
 
 		// CGI configurations
 		std::cout << "    CGI Configurations: ";
-		if (routes[i].cgiPath.empty()) {
+		if (routes[i].cgi_path.empty()) {
 			std::cout << "None" << std::endl;
 		} else {
 			std::cout << std::endl;
-			std::cout << "cgiPath: " << routes[i].cgiPath << std::endl;
-			std::cout << "cgi_extentions: " << routes[i].cgiExtension[0] << std::endl;
+			std::cout << "cgi_path: " << routes[i].cgi_path << std::endl;
+			std::cout << "cgi_extentions: " << routes[i].cgi_extension[0] << std::endl;
 			}
 		
 
 		// Upload settings
-		std::cout << "    Upload Enabled: " << (routes[i].uploadEnabled ? "Yes" : "No") << std::endl;
-		if (routes[i].uploadEnabled) {
-			std::cout << "    Upload Store: " << routes[i].uploadStore << std::endl;
+		std::cout << "    Upload Enabled: " << (routes[i].upload_enable ? "Yes" : "No") << std::endl;
+		if (routes[i].upload_enable) {
+			std::cout << "    Upload Store: " << routes[i].upload_store << std::endl;
 		}
 
 		if (i < routes.size() - 1) {

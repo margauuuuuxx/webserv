@@ -21,6 +21,8 @@ private:
 	std::multimap<std::string, std::string>	_multiHeaders;
 	std::string 							_body;
 	std::string								_clientIP;
+	bool									_requestFinished;
+	
 
 public:
 	Request(void);
@@ -47,4 +49,5 @@ public:
 	void										setClientIP(const std::string& ip);
 	void										parse(void);
 	void										reset(void);
+	bool										requestState(void);
 };
