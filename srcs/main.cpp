@@ -14,16 +14,9 @@ std::vector<char> handleRequest(char* buffer, Server& server, int client_fd){
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();
-		//=========testing purpuse only===============
-		// std::string a = "HTTP/1.1 200 OK\r\nContent-Length: 16\r\n\r\nrequest  complete\n";
-		// std::vector<char> text(a.begin(), a.end());
-		// text.push_back('\0');
-		// return text;
 	}
 
-	std::string s = "HTTP/1.1 200 OK\r\nContent-Length: 18\r\n\r\nrequest not complete\n";
-	std::vector<char> text(s.begin(), s.end());
-	text.push_back('\0');
+	std::vector<char> text;
 	return text;
 }
 
@@ -94,7 +87,7 @@ int main(int argc, char **argv) {
 
 					if (!isListener) {
 						char buffer[1024];
-						ssize_t bytes = read(fd, buffer, sizeof(buffer) - 1);
+						ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0); // last parameter = flags
 
 						if (bytes <= 0) {
 							std::cout << "Client déconnecté (fd=" << fd << ")" << std::endl;
@@ -113,11 +106,13 @@ int main(int argc, char **argv) {
 							Request& request = server->requests[fd];
 							request.setClientIP(sock->getClientIP());
 
-							buffer[bytes] = '\0';
+							// buffer[bytes] = '\0';
 							std::cout << "===REQUETE===" << std::endl;
 							std::cout << "Requête reçue sur port " << sock->getServer()->port << std::endl;
 							std::cout << "Client fd = " << fd << std::endl;
-							std::cout << "Message reçu: " << buffer;
+							std::cout << "Message reçu: ";
+							std::cout.write(buffer, bytes);
+							std::cout << std::endl;
 
 							std::vector<char> response = handleRequest(buffer, *(sock->getServer()), fd);
 							if (!response.empty()) {
