@@ -1,6 +1,10 @@
 #include "../includes/includes.hpp"
 
-Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos), _requestFinished(false){}
+/*
+	This class is responsible for building the appropriate HTTP response based on the parsed Request object and the Server config.
+*/
+
+Request::Request(void): /*_clientAddrlen(sizeof(_clientAddress)),*/ _error(false), _transferEncoding(false), _waitingForData(false), _contentLen(std::string::npos), _contentLenCopy(std::string::npos){}
 Request::~Request(void) {}
 
 const std::string headersArray[] = {
@@ -140,12 +144,19 @@ int isIncomplete(Request &obj, std::string &content)
 	{
 		std::cout << "pas de CRLFCRLF dans isincomplete" << std::endl;
 		return (1);
+	}
 	size_t contentLen = obj.getContentLen();
 	size_t contentLenCopy = obj.getContentLenCopy();
 	if (obj.getTransferEncoding() && contentLenCopy != 0)
+	{
+		std::cout << "transfer encoding pas termine" << std::endl;
 		return (2);
+	}
 	else if (contentLen != 0 && contentLen != std::string::npos && contentLenCopy != 0 && contentLenCopy != std::string::npos)
+	{
+		std::cout << "content-length pas termine" << std::endl;
 		return (2);
+	}
 	return (0);
 }
 
@@ -169,7 +180,10 @@ int detectBodyHeader(Request &obj, std::string buffer)
 	{
 		//std::cout << "test de boucle" << std::endl;
 		if (res >= 2)
+		{
+			std::cout << "res = " << res << " au début de la boucle" << std::endl;
 			return (res);
+		}
 		pos = line.find(":");
 		if (pos == std::string::npos)
 		{
@@ -217,6 +231,7 @@ size_t countLenTransferEncoding(std::string buffer)
 	{
 		//std::cout << "iss a foiré" << std::endl;
 		return (std::string::npos);
+	}
 	return (len);
 }
 
@@ -431,7 +446,6 @@ void Request::parse(void){
 	//std::cout << "-----------PARSE-----------" << std::endl;
 	while (std::getline(iss, line, '\n'))
 	{
-		//std::cout << "Boucle pour check une ligne: " << line << std::endl;
 		/*
 			Recheck et suppression de CRLF
 		*/
@@ -442,14 +456,12 @@ void Request::parse(void){
 			return ((void)assignError(makeError(400, "Bad Request CRLF in parse()")));
 		}
 		line.erase(line.size() - 1);
-		//std::cout << "apres check CRLF" << std::endl;
 		std::istringstream issLine(line);
 		if (i == 0)
 		{
 			/*
 				Parsing de la request line (methode, fichier, version)
 			*/
-			//std::cout << "i == 0 donc on passe dans la condition" << std::endl;
 			if (line.size() > MAX_REQUEST_LINE_SIZE)
 				return ((void)assignError(makeError(413, "Content Too Large")));
 			issLine >> this->_method >> this->_content >> this->_version;
@@ -466,49 +478,25 @@ void Request::parse(void){
 			/*
 				Parsing des headers
 			*/
-			//std::cout << "line est pas empty et isBody est faux donc on passe dans la condition" << std::endl;
 			if (line.size() > MAX_REQUEST_LINE_SIZE)
 				return ((void)assignError(makeError(413, "Content Too Large")));
-			//std::cout << "line size est ok" << std::endl;
 			if (std::isspace(line.at(0)))
-			{
-				//std::cout << "issapce a 0" << std::endl;
 				this->_headers[currentKey].append(line);
-			}
 			else
 			{
-				//std::cout << "pas de space a 0" << std::endl;
 				size_t colon = line.find(':');
-				//std::cout << "on a find colon";
 				if (colon == std::string::npos)
-				{
-					//std::cout << " mais il est == a npos" << std::endl;
 					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
-				}
-				//std::cout << ": " << colon << std::endl;
 				std::string key = toLower(line, colon);
 				currentKey = key;
-				//std::cout << "on a la currentKey: " << currentKey << std::endl;
-				//std::string value = ft_strtrim(line.substr(colon + 1));
-				std::string value = line.substr(colon + 1);
-				//std::cout << "value a subit le substr: " << value << std::endl;
+				std::string value = ftStrtrim(line.substr(colon + 1));
 				std::map<std::string, std::string>::iterator it;
 				if (key == "authorization" || key == "proxy-authorization")
-				{
-					//std::cout << "key == authorization ou proxy-authorization" << std::endl;
 					this->_multiHeaders.insert(std::pair<std::string, std::string>(key, value));
-				}
 				else if ((it = this->_headers.find(key)) == this->_headers.end())
-				{
-					//std::cout << "key == end?" << std::endl;
 					this->_headers[key] = value;
-					//std::cout << "segfault ici?" << std::endl;
-				}
 				else if (!uniqueHeaders.count(key))
-				{
-					//std::cout << "header doit etre unique" << std::endl;
-					it->second.append(", " + value);
-				}
+						it->second.append(", " + value);
 				else
 				{
 					std::cout << "\e[0;32m" << key << ' ' << value << "\e[0;m" << std::endl;
@@ -518,14 +506,12 @@ void Request::parse(void){
 		}
 		else
 		{
-			//std::cout << "Aucune condition n'est vrai alors on append" << std::endl;
 			if (!isBody)
 				isBody = true;
 			this->_body.append(line);
 		}
 		i++;
 	}
-	//std::cout << "Fin de la boucle" << std::endl;
 	if (!this->_headers.count("host"))
 		return ((void)assignError(makeError(400, "Bad Request pas de host")));
 	if (this->_headers.size() > MAX_HEADERS_SIZE)
