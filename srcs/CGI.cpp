@@ -50,7 +50,7 @@ void	CGI::_setEnvv() {
 	envVector.push_back("SERVER_PROTOCOL=" + _req.getVersion());
 	envVector.push_back("REQUEST_METHOD=" + _req.getMethod());
 	envVector.push_back("SCRIPT_FILENAME=" + _scriptPath);
-	envVector.push_back("CONTENT_LENGTH=" + toString(_req.getBody().size()));
+	envVector.push_back("CONTENT_LENGTH=" + toString(_req.getContentLen()));
 	envVector.push_back("SERVER_NAME=" + _server.host);
 	envVector.push_back("SERVER_PORT=" + toString(_server.port));
 	envVector.push_back("REMOTE_ADDR=" + _req.getClientIP());
@@ -136,8 +136,8 @@ void	CGI::execute(Route* route) {
 	} else { // parent 
 		close(pipe_in[0]);
 		close(pipe_out[1]);
-		if (!_req.getBody().empty())
-			write(pipe_in[1], _req.getBody().c_str(), _req.getBody().length());
+		if (!_req.getBody())
+			write(pipe_in[1], _req.getBody(), _req.getContentLen());
 		close(pipe_in[1]);
 		
 		_pid = pid;

@@ -71,7 +71,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 
 void Response::_handlePOST(Request& req, Server& server, Route* route) {
 
-    if (req.getBody().size() > static_cast<size_t>(server.clientMaxBodySize))
+    if (req.getContentLen() > static_cast<size_t>(server.clientMaxBodySize))
     {
         buildErrorResponse(413, req, server);
         return;
@@ -90,7 +90,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
 
         std::ofstream newFile(filePath.c_str(), std::ios::binary);
         if (newFile.is_open()) {
-            newFile.write(req.getBody().c_str(), req.getBody().length());
+            newFile.write(req.getBody(), req.getContentLen());
             newFile.close();
             _buildResponse(201, req, 1, "text/html");
         }

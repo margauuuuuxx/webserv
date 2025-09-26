@@ -2,15 +2,21 @@
 
 volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
-std::vector<char> handleRequest(char* buffer, Server& server, int client_fd){
+std::vector<char> handleRequest(char* buffer, Server& server, int client_fd, int bytes){
 
 	Response res;
 	Request& request = server.requests[client_fd];  // default-constructed if not already there
-	if (request.setToParse(buffer))
+	//std::cout << "buffer dans handleRequest: " << buffer << std::endl;
+	//std::cout << "on va dans setToParse" << std::endl;
+	if (request.setToParse(buffer, bytes))
 	{
+		//std::cout << "setToParse OK" << std::endl;
+		//std::cout << "check de toParse: " << std::endl << request.getToParse() << std::endl;
 		request.parse();
+		std::cout << "\e[0;31mBody:\e[0;m" << std::endl;
+		std::cout.write(request.getBody(), bytes) << std::endl;
 		std::cout << "SEND:" << std::endl;
-		std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
+		//std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
 		res.handleRequest(request, server);
 		request.reset();
 		return res.getResponse();
@@ -86,7 +92,7 @@ int main(int argc, char **argv) {
 					}
 
 					if (!isListener) {
-						char buffer[1024];
+						char buffer[MAX_REQUEST_SIZE];
 						ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0); // last parameter = flags
 
 						if (bytes <= 0) {
@@ -112,9 +118,11 @@ int main(int argc, char **argv) {
 							std::cout << "Client fd = " << fd << std::endl;
 							std::cout << "Message reçu: ";
 							std::cout.write(buffer, bytes);
+							//std::cout << buffer << std::endl;
+							//std::cout << "bytes: " << bytes << std::endl;
 							std::cout << std::endl;
 
-							std::vector<char> response = handleRequest(buffer, *(sock->getServer()), fd);
+							std::vector<char> response = handleRequest(buffer, *(sock->getServer()), fd, bytes);
 							if (!response.empty()) {
 								pendingResponses[fd] = response;
 								poller.modifyFd(fd, POLLOUT); // passe en écriture
