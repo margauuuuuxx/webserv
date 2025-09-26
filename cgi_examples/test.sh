@@ -83,7 +83,7 @@ cat <<EOF
         <p>$message</p>
         <div class="buttons">
             <a href="/" class="btn">Home</a>
-            <a href="/cgi-bin/test.sh" class="btn">Refresh ✨</a>
+            <a href="/bash-cgi/test.sh" class="btn">Refresh ✨</a>
         </div>
     </div>
 </body>
