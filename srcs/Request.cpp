@@ -252,10 +252,13 @@ int checkCRLF(std::string &buffer)
 }
 
 int Request::incrementIndexBody(void){
-	if (this->_indexBody + 1 > MAX_BODY_SIZE)
+	if (this->_indexBody + 1 > MAX_BODY_SIZE){
+		// std::cout << "index body: " << this->_indexBody << std::endl;
 		return this->_indexBody;
+	}
 	int temp = this->_indexBody;
 	this->_indexBody++;
+	// std::cout << "index body: " << this->_indexBody << std::endl;
 	return temp;
 }
 
@@ -266,10 +269,13 @@ size_t Request::appendBody(char *cbuffer, int const bytes){
 		this->_body[this->incrementIndexBody()] = cbuffer[i];
 		i++;
 	}
+	// std::cout << "i : " << i << std::endl;
+	// std::cout << "max: " << max << std::endl;
 	return i;
 }
 
 size_t Request::appendBody(char *cbuffer, int const bytes, size_t pos){
+	// std::cout << "bytes: " << bytes << std::endl;
 	size_t max = static_cast<size_t>(bytes);
 	if (pos == std::string::npos || pos >= max)
 		return 0;
@@ -278,6 +284,9 @@ size_t Request::appendBody(char *cbuffer, int const bytes, size_t pos){
 		this->_body[this->incrementIndexBody()] = cbuffer[i];
 		i++;
 	}
+	// std::cout << "i : " << i << std::endl;
+	// std::cout << "pos : " << pos << std::endl;
+	// std::cout << "max: " << max << std::endl;
 	return i - pos;
 }
 
@@ -353,16 +362,19 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 			this->_toParse.push_back('\n');
 		}
 		this->_toParse.append("\r\n");
-		//std::cout << "toParse: " << this->_toParse << std::endl;
+		// std::cout << "toParse: " << this->_toParse << std::endl;
 		if (!boundary.empty()){
-			//std::cout << "boundary: " << boundary << std::endl;
+			// std::cout << "boundary: " << boundary << std::endl;
 			//std::cout << cbuffer << std::endl << std::endl << std::endl;
 			size_t crlf = ft_strchr(cbuffer, "\r\n\r\n", bytes, 0);
-			//std::cout << "crlf: " << crlf << std::endl;
+			// std::cout << "crlf: " << crlf << std::endl;
 			//size_t pos = ft_strchr(cbuffer, boundary.c_str(), bytes, crlf);
 			//std::cout << "pos: " << pos << std::endl;
 			//if (pos != std::string::npos)
+			// std::cout << "bytes avant append: " << bytes << std::endl;
 				this->_contentLenCopy = appendBody(cbuffer, bytes, crlf + 4);
+				// std::cout << "contentlen: " << this->_contentLen << std::endl;
+				// std::cout << "contentlencopy: " << this->_contentLenCopy << std::endl;
 			//else
 			//std::cout << "pas de pos" << std::endl;
 		}
@@ -395,7 +407,7 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 		On vérifie que ce soit le cas avec la fonction isIncomplete(). Si elle est
 		incomplète, on efface _toParse pour recommencer et faire les choses BIEN.
 	*/
-	if ((isHeader = isIncomplete(*this, this->_toParse)) > 0)
+	else if ((isHeader = isIncomplete(*this, this->_toParse)) > 0)
 	{
 		//std::cout << "header incomplet" << std::endl;
 		//if (this->_toParse == buffer)
@@ -424,14 +436,14 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 				if (this->_contentLenCopy == std::string::npos)
 				{
 					// std::cout << "problème avec contentlencopy" << std::endl;
-					return (assignError(makeError(400, "Bad Request for hexa")));
+					return (assignError(makeError(400, "Bad Request")));
 				}
 			}
 			this->_waitingForData = !this->_waitingForData;
 			if ((!this->_waitingForData && buffer.size() - 2 < this->_contentLenCopy) || (this->_contentLenCopy != 0 && isRawEmpty(buffer)))
 			{
 				// std::cout << "problème de buffer size" << std::endl;
-				return (assignError(makeError(400, "Bad Request for buffer size")));
+				return (assignError(makeError(400, "Bad Request")));
 			}
 			if (!this->_waitingForData)
 			{
@@ -449,8 +461,9 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 				return (1);
 			}
 		}
-		else if (isHeader != 1 && this->getContentLenCopy() != 0 && this->getContentLenCopy() != std::string::npos)
+		else if (isHeader != 1)
 		{
+			// else if (isHeader != 1 && this->getContentLenCopy() != 0 && this->getContentLenCopy() != std::string::npos)
 			/*
 				Le nombre de caractères à recevoir est dans les headers.
 				Si il y a trop de caractères, on coupe le trop plein.
@@ -460,31 +473,38 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 			//std::cout << std::endl << "test : " << this->getContentLen() << this->getContentLenCopy() << std::endl;
 			// std::cout << "\e[0;31mj'attends\e[0;m" << std::endl;
 			//this->_appendLen = buffer.length() - 2;
-			this->_appendLen = bytes;
-			// std::cout << buffer << std::endl;
-			// std::cout << "on veut ajouter " << this->_appendLen << " et contentlencopy == " << this->_contentLenCopy << std::endl;
-			if (this->_contentLenCopy == this->_contentLen - 1)
-				this->_contentLenCopy = this->_contentLen;
-			if (this->_contentLenCopy - this->_appendLen >= 0)
-			{
-				this->_contentLenCopy -= this->_appendLen;
-				this->appendBody(cbuffer, bytes);
+			// this->_appendLen = bytes;
+			// // std::cout << buffer << std::endl;
+			// // std::cout << "on veut ajouter " << this->_appendLen << " et contentlencopy == " << this->_contentLenCopy << std::endl;
+			// if (this->_contentLenCopy == this->_contentLen - 1)
+			// 	this->_contentLenCopy = this->_contentLen;
+			// if (this->_contentLenCopy - this->_appendLen >= 0)
+			// {
+				//  -= this->_appendLen;
+			// std::cout << "this->_contentLenCopy: " << this->_contentLenCopy << std::endl;
+			this->_contentLenCopy += this->appendBody(cbuffer, bytes);
+			// std::cout << "this->_contentLenCopy: " << this->_contentLenCopy << std::endl;
+			// std::cout << "this->_contentLen: " << this->_contentLen << std::endl;
+			if (this->_contentLenCopy == this->_contentLen){
+				// std::cout << "on retourne 1" << std::endl;
+				return 1;
 			}
-			else
-			{
-				//this->_toParse.append(buffer, 0, this->_contentLenCopy);
-				this->appendBody(cbuffer, this->_contentLenCopy);
-				// std::cout << "on retourne 1 | contentlencopy = appendlen < 0" << std::endl;
-				return (1);
-			}
-			if (this->_contentLenCopy == 0)
-			{
-				// std::cout << "on retourne 1 | contentlencopy == 0" << std::endl;
-				return (1);
-			}
+			// }
+			// else
+			// {
+			// 	//this->_toParse.append(buffer, 0, this->_contentLenCopy);
+			// 	this->appendBody(cbuffer, this->_contentLenCopy);
+			// 	// std::cout << "on retourne 1 | contentlencopy = appendlen < 0" << std::endl;
+			// 	return (1);
+			// }
+			// if (this->_contentLenCopy == 0)
+			// {
+			// 	// std::cout << "on retourne 1 | contentlencopy == 0" << std::endl;
+			// 	return (1);
+			// }
 		}
-		else
-			this->appendBody(cbuffer, bytes);
+		// else
+		// 	this->appendBody(cbuffer, bytes);
 		// std::cout << "on retourne 0" << std::endl;
 		return (0);
 	}
@@ -511,7 +531,7 @@ void Request::parse(void){
 		if (line.at(line.size() - 1) != 13)
 		{
 			// std::cout << "body: " << this->getBody() << std::endl;
-			return ((void)assignError(makeError(400, "Bad Request CRLF in parse()")));
+			return ((void)assignError(makeError(400, "Bad Request")));
 		}
 		line.erase(line.size() - 1);
 		std::istringstream issLine(line);
@@ -527,7 +547,7 @@ void Request::parse(void){
 			if (this->_method.empty() || this->_content.empty() || this->_version.empty()
 				|| !issLine.eof()
 				|| this->_version != "HTTP/1.1")
-				return ((void)assignError(makeError(400, "Bad Request request line")));
+				return ((void)assignError(makeError(400, "Bad Request")));
 			else if (this->_method != "GET" && this->_method != "POST" && this->_method != "DELETE")
 				return ((void)assignError(makeError(405, "Method Not Allowed")));
 		}
@@ -544,7 +564,7 @@ void Request::parse(void){
 			{
 				size_t colon = line.find(':');
 				if (colon == std::string::npos)
-					return ((void)assignError(makeError(400, "Bad Request pas de ':'")));
+					return ((void)assignError(makeError(400, "Bad Request")));
 				std::string key = toLower(line, colon);
 				currentKey = key;
 				std::string value = line.substr(colon + 1);
@@ -558,29 +578,29 @@ void Request::parse(void){
 				else
 				{
 					// std::cout << "\e[0;32m" << key << ' ' << value << "\e[0;m" << std::endl;
-					return ((void)assignError(makeError(400, "Bad Request multiple unique header")));
+					return ((void)assignError(makeError(400, "Bad Request")));
 				}
 			}
 		}
 		i++;
 	}
 	if (!this->_headers.count("host"))
-		return ((void)assignError(makeError(400, "Bad Request pas de host")));
+		return ((void)assignError(makeError(400, "Bad Request")));
 	if (this->_headers.size() > MAX_HEADERS_SIZE)
 		return ((void)assignError(makeError(413, "Content Too Large")));
-	std::cout << "\e[0;31mmethod:	\e[0;m" << this->_method << std::endl;
-	std::cout << "\e[0;31mcontent:	\e[0;m" << this->_content << std::endl;
-	std::cout << "\e[0;31mversion:	\e[0;m" << this->_version << std::endl;
-	std::cout << "\e[0;31mmap: \e[0;m" << std::endl;
-	for (std::map<std::string, std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
-	{
-		std::cout << "\e[0;31m\tfirst:	\e[0;m" << it->first << ",\t";
-		std::cout << "\e[0;31msecond:	\e[0;m" << it->second << std::endl;
-	}
-	std::cout << "\e[0;31mmultimap: \e[0;m" << std::endl;
-	for (std::multimap<std::string, std::string>::iterator it = this->_multiHeaders.begin(); it != this->_multiHeaders.end(); it++)
-	{
-		std::cout << "\e[0;31mfirst:	\e[0;m" << it->first << ", ";
-		std::cout << "\e[0;31msecond:	\e[0;m" << it->second << std::endl;
-	}
+	// std::cout << "\e[0;31mmethod:	\e[0;m" << this->_method << std::endl;
+	// std::cout << "\e[0;31mcontent:	\e[0;m" << this->_content << std::endl;
+	// std::cout << "\e[0;31mversion:	\e[0;m" << this->_version << std::endl;
+	// std::cout << "\e[0;31mmap: \e[0;m" << std::endl;
+	// for (std::map<std::string, std::string>::iterator it = this->_headers.begin(); it != this->_headers.end(); it++)
+	// {
+	// 	std::cout << "\e[0;31m\tfirst:	\e[0;m" << it->first << ",\t";
+	// 	std::cout << "\e[0;31msecond:	\e[0;m" << it->second << std::endl;
+	// }
+	// std::cout << "\e[0;31mmultimap: \e[0;m" << std::endl;
+	// for (std::multimap<std::string, std::string>::iterator it = this->_multiHeaders.begin(); it != this->_multiHeaders.end(); it++)
+	// {
+	// 	std::cout << "\e[0;31mfirst:	\e[0;m" << it->first << ", ";
+	// 	std::cout << "\e[0;31msecond:	\e[0;m" << it->second << std::endl;
+	// }
 }
