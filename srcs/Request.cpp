@@ -183,9 +183,12 @@ int detectBodyHeader(Request &obj, std::string buffer)
 	while (std::getline(istream, line, '\n'))
 	{
 		//std::cout << "test de boucle" << std::endl;
+		std::cout << line << std::endl;
+		if (line == "\r")
+			break ;
 		if (res >= 2)
 		{
-			// std::cout << "res = " << res << " au début de la boucle" << std::endl;
+			//std::cout << "res = " << res << " au début de la boucle" << std::endl;
 			return (res);
 		}
 		pos = line.find(":");
@@ -222,7 +225,7 @@ int detectBodyHeader(Request &obj, std::string buffer)
 			// std::cout << "value: " << value << std::endl;
 		}
 	}
-	// std::cout << "tout est normal, on retourne " << res << std::endl; 
+	//std::cout << "tout est normal, on retourne " << res << std::endl; 
 	return (res);
 }
 
@@ -302,9 +305,12 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 		return (0);
 	// std::cout << "toParse: " << this->_toParse << std::endl;
 	if (detectBodyHeader(*this, buffer) >= 2 || this->_contentLen == std::string::npos - 1)
+	{
+		std::cout << "on retourne une erreur" << std::endl;
 		return (assignError(makeError(400, "Bad Request")));
+	}
 	//std::cout << "detectBodyHeader est passé" << std::endl;
-	// std::cout << "content len:" << this->getContentLen() << std::endl;
+	//std::cout << "content len:" << this->getContentLen() << std::endl;
 	if ((this->_contentLen == std::string::npos && !this->getTransferEncoding()))
 	{
 		if (buffer.size() == 2 && ((int)buffer.at(0) == 13) && ((int)buffer.at(1) == 10)){
@@ -381,32 +387,6 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 		//else
 			//std::cout << "pas de boundary" << std::endl;
 	}
-	//if (!checkCRLF(buffer))
-	//{
-	//std::cout << "problème de CRLF" << std::endl;
-	//	return (assignError(makeError(400, "Bad Request for CRLF")));
-	//}
-	//std::cout << "On check si complet" << std::endl;
-	/*
-		La première fois que cette fonction est appelé, _toParse est vide et on part
-		du principe que le buffer contient une requête complète.
-		Donc on l'assigne tout simplement.
-	*/
-	//std::cout << "cbuffer: " << cbuffer << std::endl;
-	//std::cout << "buffer: " << buffer << std::endl;
-	//std::cout << "toParse: " << std::endl;
-	//std::cout.write((this->_toParse).c_str(), bytes);
-	//std::string::iterator it = this->_toParse.begin();
-	//for (int i = 0; i != bytes; i++){
-	//	std::cout << *it;
-	//	it++;
-	//}
-	//std::cout << "\e[0;31mon check ce que contient toParse:" << std::endl << this->_toParse << "\e[0;m" << std::endl;
-	//std::cout << "contentlencopy: " << this->_contentLenCopy << std::endl;
-	/*
-		On vérifie que ce soit le cas avec la fonction isIncomplete(). Si elle est
-		incomplète, on efface _toParse pour recommencer et faire les choses BIEN.
-	*/
 	else if ((isHeader = isIncomplete(*this, this->_toParse)) > 0)
 	{
 		//std::cout << "header incomplet" << std::endl;
@@ -463,45 +443,11 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 		}
 		else if (isHeader != 1)
 		{
-			// else if (isHeader != 1 && this->getContentLenCopy() != 0 && this->getContentLenCopy() != std::string::npos)
-			/*
-				Le nombre de caractères à recevoir est dans les headers.
-				Si il y a trop de caractères, on coupe le trop plein.
-				Si il n'y en a pas assez, alors on attends 10 secondes avant
-				de renvoyer un timeout.
-			*/
-			//std::cout << std::endl << "test : " << this->getContentLen() << this->getContentLenCopy() << std::endl;
-			// std::cout << "\e[0;31mj'attends\e[0;m" << std::endl;
-			//this->_appendLen = buffer.length() - 2;
-			// this->_appendLen = bytes;
-			// // std::cout << buffer << std::endl;
-			// // std::cout << "on veut ajouter " << this->_appendLen << " et contentlencopy == " << this->_contentLenCopy << std::endl;
-			// if (this->_contentLenCopy == this->_contentLen - 1)
-			// 	this->_contentLenCopy = this->_contentLen;
-			// if (this->_contentLenCopy - this->_appendLen >= 0)
-			// {
-				//  -= this->_appendLen;
-			// std::cout << "this->_contentLenCopy: " << this->_contentLenCopy << std::endl;
 			this->_contentLenCopy += this->appendBody(cbuffer, bytes);
-			// std::cout << "this->_contentLenCopy: " << this->_contentLenCopy << std::endl;
-			// std::cout << "this->_contentLen: " << this->_contentLen << std::endl;
 			if (this->_contentLenCopy == this->_contentLen){
-				// std::cout << "on retourne 1" << std::endl;
+				//std::cout << "on retourne 1 else if isheader != 1" << std::endl;
 				return 1;
 			}
-			// }
-			// else
-			// {
-			// 	//this->_toParse.append(buffer, 0, this->_contentLenCopy);
-			// 	this->appendBody(cbuffer, this->_contentLenCopy);
-			// 	// std::cout << "on retourne 1 | contentlencopy = appendlen < 0" << std::endl;
-			// 	return (1);
-			// }
-			// if (this->_contentLenCopy == 0)
-			// {
-			// 	// std::cout << "on retourne 1 | contentlencopy == 0" << std::endl;
-			// 	return (1);
-			// }
 		}
 		// else
 		// 	this->appendBody(cbuffer, bytes);
@@ -509,7 +455,7 @@ int Request::setToParse(char cbuffer[MAX_REQUEST_SIZE], int const bytes){
 		return (0);
 	}
 	//std::cout << "toParse: " << this->_toParse << std::endl;
-	// std::cout << "on retourne 1 fin de fonction" << std::endl;
+	//std::cout << "on retourne 1 fin de fonction" << std::endl;
 	return (1);
 }
 
