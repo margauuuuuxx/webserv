@@ -11,7 +11,15 @@
 #include "../includes/Server.hpp"
 
 
-Route::Route() : autoindex(false), uploadEnabled(false) {}
+Route::Route() : autoindex(false), uploadEnabled(false) {
+	location = "";
+	allowedMethods.clear();
+	root = "";
+	cgiExtension.clear();
+	cgiPath = "";
+	uploadStore = "";
+	path = "";
+}
 
 Server::Server(){}
 Server::~Server(){}

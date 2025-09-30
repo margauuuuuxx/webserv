@@ -93,7 +93,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
     }
 
     if (route->uploadEnabled) {
-        DEBUG_LOG(YELLOW << "HERE" << RESET);
+        DEBUG_LOG(YELLOW << "HERE: uploadEnabled" << RESET);
         std::string body(req.getBody(), req.getContentLen());
 
         // Finding the original filename extension

@@ -319,7 +319,7 @@ bool    isCGIReq(const std::string& resource, const Route* route)
     DEBUG_LOG("Cgi route = " << route->location << ", CGI path = " << route->cgiPath);
 
     if (route->cgiPath.empty()) {
-        DEBUG_LOG(RED << "HEREEEE" << RESET);
+        DEBUG_LOG(RED << "EMPTY CGI PATH" << RESET);
         return (false);
     }
 
