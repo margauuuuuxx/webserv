@@ -13,6 +13,8 @@ struct Route{
 	bool 						uploadEnabled;
 	std::string 				uploadStore;
 	std::string					path;
+	
+	Route();
 };
 
 class Server{

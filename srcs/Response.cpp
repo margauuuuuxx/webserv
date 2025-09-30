@@ -70,6 +70,10 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 }
 
 void Response::_handlePOST(Request& req, Server& server, Route* route) {
+    DEBUG_LOG(YELLOW << "In the handlePOST fct" << RESET);
+
+    std::string bodySize = ftItoa(server.clientMaxBodySize);
+    DEBUG_LOG("Content len = " << req.getContentLen() << std::endl << "Client max body size = " << bodySize << std::endl);
 
     if (req.getContentLen() > static_cast<size_t>(server.clientMaxBodySize))
     {
@@ -77,6 +81,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
         return;
     }
 
+    DEBUG_LOG(YELLOW << "Req content: " << std::endl << RESET << req.getContent());
     if (isCGIReq(req.getContent(), route)) {
         std::string filename = route->root + req.getContent();
         handleCGI(*this, filename, req, server, route);
@@ -84,6 +89,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
     }
 
     if (route->uploadEnabled) {
+        DEBUG_LOG(YELLOW << "HERE" << RESET);
         std::stringstream filename_ss;
         filename_ss << "upload_" << time(NULL);
         std::string filePath = route->uploadStore + "/"  + filename_ss.str();

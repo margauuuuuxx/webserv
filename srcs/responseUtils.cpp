@@ -290,9 +290,13 @@ std::string Response::_generateAutoIndex(const std::string& path, const std::str
 
 bool    isCGIReq(const std::string& resource, const Route* route)
 {
-    DEBUG_LOG(RED << "CGI REQ" << RESET);
-    if (route->cgiPath.empty())
+    DEBUG_LOG(RED << "isCGIReq function" << RESET);
+    DEBUG_LOG("Cgi route = " << route->location << ", CGI path = " << route->cgiPath);
+
+    if (route->cgiPath.empty()) {
+        DEBUG_LOG(RED << "HEREEEE" << RESET);
         return (false);
+    }
 
     size_t dotPos = resource.rfind('.');
     if (dotPos == std::string::npos)

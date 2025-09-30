@@ -13,8 +13,8 @@ std::vector<char> handleRequest(char* buffer, Server& server, int client_fd, int
 		//std::cout << "setToParse OK" << std::endl;
 		//std::cout << "check de toParse: " << std::endl << request.getToParse() << std::endl;
 		request.parse();
-		std::cout << "\e[0;31mBody:\e[0;m" << std::endl;
-		std::cout.write(request.getBody(), bytes) << std::endl;
+		//std::cout << "\e[0;31mBody:\e[0;m" << std::endl;
+		//std::cout.write(request.getBody(), bytes) << std::endl;
 		std::cout << "SEND:" << std::endl;
 		//std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
 		res.handleRequest(request, server);

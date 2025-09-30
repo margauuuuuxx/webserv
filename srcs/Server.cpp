@@ -9,6 +9,10 @@
 */
 
 #include "../includes/Server.hpp"
+
+
+Route::Route() : autoindex(false), uploadEnabled(false) {}
+
 Server::Server(){}
 Server::~Server(){}
 void Server::printServerInfos() const {
