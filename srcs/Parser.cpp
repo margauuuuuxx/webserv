@@ -216,7 +216,7 @@ void Parser::parseRoutes(Server& server){
 	route.location = _tokens[++_i];
 	_i++;
 	if (_tokens[_i] != "{")
-		throw std::runtime_error("dirrective \"location\" has no openning \"{\"");
+		throw std::runtime_error("directive \"location\" has no openning \"{\"");
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != "}") {
 		parseRouteElements(route);

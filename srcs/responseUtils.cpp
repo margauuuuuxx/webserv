@@ -288,6 +288,31 @@ std::string Response::_generateAutoIndex(const std::string& path, const std::str
     return oss.str();
 }
 
+std::string Response::_generateUploadJSON(const std::string& path) const {
+    std::ostringstream oss;
+    oss << "[";
+
+    DIR* dir = opendir(path.c_str());
+    if (dir) {
+        struct dirent* entry;
+        bool first = true;
+        while ((entry = readdir(dir)) != NULL) {
+            std::string name = entry->d_name;
+            if (name != "." && name != "..") {
+                if (!first)
+                    oss << ",";
+                oss << "\"" << name << "\"";
+                first = false;
+            }
+        }
+        closedir(dir);
+    }
+
+    oss << "]";
+    return (oss.str());
+}
+
+
 bool    isCGIReq(const std::string& resource, const Route* route)
 {
     DEBUG_LOG(RED << "isCGIReq function" << RESET);

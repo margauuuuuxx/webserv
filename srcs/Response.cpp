@@ -24,6 +24,12 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 
     if (S_ISDIR(path_stat.st_mode)) // dir
     {
+        if (req.getContent() == "/uploads/") {
+            this->_content = _generateUploadJSON(resourcePath);
+            _buildResponse(200, req, 0, "applications/json");
+            return;
+        }
+
         bool indexFound = 0;
         for (size_t i = 0; i < route->index.size(); i++) {
             std::string indexPath = resourcePath + "/" + route->index[i];
