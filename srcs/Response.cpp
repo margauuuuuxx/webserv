@@ -158,6 +158,12 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
 void Response::_handleDELETE(Request& req, Server& server, Route* route) {
     std::string filePath = route->path;
 
+    if (filePath.length() >= 5 && filePath.substr(filePath.length() - 5) == ".html") {
+        DEBUG_LOG("Attempt to delete an HTML file denied");
+        buildErrorResponse(403, req, server); // Forbidden
+        return;
+    }
+
     struct stat path_stat;
     if (stat(filePath.c_str(), &path_stat) != 0) {
         buildErrorResponse(404, req, server);
