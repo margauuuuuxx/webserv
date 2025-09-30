@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
 					}
 
 					if (!isListener) {
-						char buffer[MAX_REQUEST_SIZE];
-						ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0); // last parameter = flags
+						std::vector<char> buffer(MAX_REQUEST_SIZE);
+						ssize_t bytes = recv(fd, &buffer[0], buffer.size(), 0); // last parameter = flags
 
 						if (bytes <= 0) {
 							std::cout << "Client déconnecté (fd=" << fd << ")" << std::endl;
@@ -117,12 +117,12 @@ int main(int argc, char **argv) {
 							std::cout << "Requête reçue sur port " << sock->getServer()->port << std::endl;
 							std::cout << "Client fd = " << fd << std::endl;
 							std::cout << "Message reçu: ";
-							std::cout.write(buffer, bytes);
+							std::cout.write(&buffer[0], bytes);
 							//std::cout << buffer << std::endl;
 							//std::cout << "bytes: " << bytes << std::endl;
 							std::cout << std::endl;
 
-							std::vector<char> response = handleRequest(buffer, *(sock->getServer()), fd, bytes);
+							std::vector<char> response = handleRequest(&buffer[0], *(sock->getServer()), fd, bytes);
 							if (!response.empty()) {
 								pendingResponses[fd] = response;
 								poller.modifyFd(fd, POLLOUT); // passe en écriture

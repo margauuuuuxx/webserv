@@ -7,6 +7,7 @@ void    Response::_initStatusMessages() {
     _statusMessages[404] = "Not Found";
     _statusMessages[405] = "Method Not Allowed";
     _statusMessages[409] = "Conflict";
+    _statusMessages[413] = "Content Too Large";
     _statusMessages[500] = "Internal Server Error";
     _statusMessages[501] = "Not Implemented";
     _statusMessages[504] = "Gateway Timeout";
@@ -82,7 +83,6 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
         << "        <p>Oops! Something went wrong. The page you were looking for could not be found or an error occurred.</p>\n"
         << "        <div class=\"buttons\">\n"
         << "            <a href=\"/\" class=\"btn\">Go Home</a>\n"
-        << "            <a href=\"/contact\" class=\"btn\">Contact Support</a>\n"
         << "        </div>\n"
         << "    </div>\n"
         << "</body>\n"
