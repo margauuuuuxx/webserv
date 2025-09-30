@@ -1,6 +1,6 @@
 NAME		= webserv 
 
-SRCS 		=	srcs/CGI.cpp srcs/CGIutils.cpp srcs/main.cpp srcs/Parser.cpp \
+SRCS 		= 	srcs/CGI.cpp srcs/CGIutils.cpp srcs/main.cpp srcs/Parser.cpp \
 				srcs/Poller.cpp srcs/Request.cpp srcs/Response.cpp \
 				srcs/responseUtils.cpp srcs/Server.cpp srcs/Socket.cpp \
 				srcs/SocketArray.cpp srcs/utils.cpp
@@ -15,7 +15,7 @@ PINK  		= \033[1;38;5;213m
 NC			= \033[0m
 FACE		= 😏
 
-all: $(NAME)
+all: clean_uploads $(NAME)
 
 $(NAME): $(OBJS)
 	@c++ $(FLAGS) $(OBJS) -o $(NAME)
@@ -32,3 +32,8 @@ fclean: clean
 	@rm -f $(NAME)
 
 re: fclean all
+
+clean_uploads:
+	@rm -rf www/uploads/*
+
+.PHONY: all clean fclean re clean_uploads
