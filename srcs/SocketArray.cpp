@@ -6,7 +6,7 @@
 
 SocketArray::SocketArray(){}
 SocketArray::~SocketArray(){
-	std::cout << "destructor of the erray" << std::endl;
+	std::cout << "destructor of the array" << std::endl;
 	for (size_t i = 0; i < _sockets.size() ; i++) {
 		delete _sockets[i];
 	}
