@@ -81,13 +81,11 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
     std::string bodySize = ftItoa(server.clientMaxBodySize);
     DEBUG_LOG("Content len = " << req.getContentLen() << std::endl << "Client max body size = " << bodySize << std::endl);
 
-    if (req.getContentLen() > static_cast<size_t>(server.clientMaxBodySize))
-    {
+    if (req.getContentLen() > static_cast<size_t>(server.clientMaxBodySize)) {
         buildErrorResponse(413, req, server);
         return;
     }
 
-    DEBUG_LOG(YELLOW << "Req content: " << std::endl << RESET << req.getContent());
     if (isCGIReq(req.getContent(), route)) {
         std::string filename = route->root + req.getContent();
         handleCGI(*this, filename, req, server, route);
@@ -96,13 +94,57 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
 
     if (route->uploadEnabled) {
         DEBUG_LOG(YELLOW << "HERE" << RESET);
+        std::string body(req.getBody(), req.getContentLen());
+
+        // Finding the original filename extension
+        std::string filename_key = "filename=\"";
+        size_t filename_pos = body.find(filename_key);
+        if (filename_pos == std::string::npos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find 'filename' in POST body");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+        filename_pos += filename_key.length();
+        size_t filename_end_pos = body.find("\"", filename_pos);
+        if (filename_end_pos == std::string::npos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find closing quote for 'filename'");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+        std::string original_filename = body.substr(filename_pos, filename_end_pos - filename_pos);
+
+        std::string extension = "";
+        size_t dot_pos = original_filename.rfind(".");
+        if (dot_pos != std::string::npos) 
+            extension = original_filename.substr(dot_pos);
+
+        // Finding the start of the actual file data
+        std::string seperator = "\r\n\r\n";
+        size_t data_start_pos = body.find(seperator, filename_end_pos);
+        if (data_start_pos == std::string::npos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find data seperator in POST body");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+        data_start_pos += seperator.length();
+
+        // Find the end of the file data
+        std::string boundary_key = "\r\n--";
+        size_t data_end_pos = body.rfind(boundary_key);
+        if (data_end_pos == std::string::npos || data_end_pos < data_start_pos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find end boundary in POST body");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+
+        // Creating a new filename and saving the data
         std::stringstream filename_ss;
-        filename_ss << "upload_" << time(NULL);
+        filename_ss << "upload_" << time(NULL) << extension;
         std::string filePath = route->uploadStore + "/"  + filename_ss.str();
 
         std::ofstream newFile(filePath.c_str(), std::ios::binary);
         if (newFile.is_open()) {
-            newFile.write(req.getBody(), req.getContentLen());
+            newFile.write(body.c_str() + data_start_pos, data_end_pos - data_start_pos);
             newFile.close();
             _buildResponse(201, req, 1, "text/html");
         }
