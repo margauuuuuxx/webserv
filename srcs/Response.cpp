@@ -156,7 +156,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
 }
 
 void Response::_handleDELETE(Request& req, Server& server, Route* route) {
-    std::string filePath = route->root + req.getContent();
+    std::string filePath = route->path;
 
     struct stat path_stat;
     if (stat(filePath.c_str(), &path_stat) != 0) {
