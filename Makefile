@@ -15,7 +15,7 @@ PINK  		= \033[1;38;5;213m
 NC			= \033[0m
 FACE		= 😏
 
-all: clean_uploads $(NAME)
+all: $(NAME)
 
 $(NAME): $(OBJS)
 	@c++ $(FLAGS) $(OBJS) -o $(NAME)
@@ -27,13 +27,11 @@ $(OBJS_DIR)/%.o: srcs/%.cpp
 
 clean:
 	@rm -rf $(OBJS_DIR)
+	@rm -rf www/uploads/*
 
 fclean: clean
 	@rm -f $(NAME)
 
 re: fclean all
-
-clean_uploads:
-	@rm -rf www/uploads/*
 
 .PHONY: all clean fclean re clean_uploads
