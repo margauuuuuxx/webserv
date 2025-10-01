@@ -2,28 +2,11 @@
 
 volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
-std::vector<char> handleRequest(char* buffer, Server& server, int client_fd, int bytes){
-
+std::vector<char> handleRequest(Request& request, Server& server){
 	Response res;
-	Request& request = server.requests[client_fd];  // default-constructed if not already there
-	//std::cout << "buffer dans handleRequest: " << buffer << std::endl;
-	//std::cout << "on va dans setToParse" << std::endl;
-	if (request.setToParse(buffer, bytes))
-	{
-		//std::cout << "setToParse OK" << std::endl;
-		//std::cout << "check de toParse: " << std::endl << request.getToParse() << std::endl;
-		request.parse();
-		//std::cout << "\e[0;31mBody:\e[0;m" << std::endl;
-		//std::cout.write(request.getBody(), bytes) << std::endl;
-		std::cout << "SEND:" << std::endl;
-		//std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
-		res.handleRequest(request, server);
-		request.reset();
-		return res.getResponse();
-	}
-
-	std::vector<char> text;
-	return text;
+	res.handleRequest(request, server);
+	request.reset();
+	return (res.getResponse());
 }
 
 void signalHandler(int sig) {
@@ -92,7 +75,7 @@ int main(int argc, char **argv) {
 					}
 
 					if (!isListener) {
-						std::vector<char> buffer(MAX_REQUEST_SIZE);
+						std::vector<char> buffer(MAX_REQUEST_SIZE); // IS IT THAT MACRO OR THE ONE IN THE CONFIG FILE ??
 						ssize_t bytes = recv(fd, &buffer[0], buffer.size(), 0); // last parameter = flags
 
 						if (bytes <= 0) {
@@ -111,25 +94,22 @@ int main(int argc, char **argv) {
 							Server* server = sock->getServer();
 							Request& request = server->requests[fd];
 							request.setClientIP(sock->getClientIP());
+							request.appendToRawRequest(&buffer[0], bytes);
+							request.parse();
 
-							// buffer[bytes] = '\0';
-							std::cout << "===REQUETE===" << std::endl;
-							std::cout << "Requête reçue sur port " << sock->getServer()->port << std::endl;
-							std::cout << "Client fd = " << fd << std::endl;
-							std::cout << "Message reçu: ";
-							std::cout.write(&buffer[0], bytes);
-							//std::cout << buffer << std::endl;
-							//std::cout << "bytes: " << bytes << std::endl;
-							std::cout << std::endl;
-
-							std::vector<char> response = handleRequest(&buffer[0], *(sock->getServer()), fd, bytes);
-							if (!response.empty()) {
+							if (request.parsingFinished()) {
+								std::vector<char> response = handleRequest(request, *server);
+								if (!response.empty()) {
+									pendingResponses[fd] = response;
+									poller.modifyFd(fd, POLLOUT); // passe en écriture
+								}
+							} else if (request.parsingError()) {
+								int code = request.getErrorCode();
+								const std::string& message = request.getStatusMessage();
+								std::vector<char> response = generateErrorResponse(code, message);
 								pendingResponses[fd] = response;
-								poller.modifyFd(fd, POLLOUT); // passe en écriture
+								poller.modifyFd(fd, POLLOUT);
 							}
-						}
-						else {
-							throw std::runtime_error("Client fd non trouvé lors de la réception");
 						}
 					}
 				}

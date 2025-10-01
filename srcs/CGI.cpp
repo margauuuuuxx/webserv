@@ -125,19 +125,28 @@ void	CGI::execute(Route* route) {
 		dup2(pipe_in[0], STDIN_FILENO); // read end
 		dup2(pipe_out[1], STDOUT_FILENO); // write end
 		closePipes(pipe_in, pipe_out);
+
+		char resolved_path[PATH_MAX];
+		if (realpath(_scriptPath.c_str(), resolved_path) == NULL) {
+			DEBUG_LOG(RED << "EXIT: " << RESET << "handleCGI: cannot get realpath");
+			exit(EXIT_FAILURE);
+		}
+
 		char* argv[] = {
 			const_cast<char*>(route->cgiPath.c_str()),
-			const_cast<char*>(_scriptPath.c_str()),
+			resolved_path,
 			NULL
 		};
 		execve(argv[0], argv, _envv);
-		DEBUG_LOG(RED << "EXIT: " << RESET << "handleCGI: execve() failed");
+		DEBUG_LOG(RED << "EXIT: " << RESET << "handleCGI: execve() failed: " << strerror(errno) << " for absolute script path: " << resolved_path);
 		exit(EXIT_FAILURE);
 	} else { // parent 
 		close(pipe_in[0]);
 		close(pipe_out[1]);
-		if (!_req.getBody())
-			write(pipe_in[1], _req.getBody(), _req.getContentLen());
+
+		const std::vector<char>& body = _req.getBody();
+		if (!body.empty())
+			write(pipe_in[1], &body[0], body.size());
 		close(pipe_in[1]);
 		
 		_pid = pid;

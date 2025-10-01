@@ -38,7 +38,7 @@ class CGI {
         CGI(Request &req, Server& server, const std::string& scriptPath, Response &res);
         ~CGI();
         
-        void                                execute(Route* route);
+        void	execute(Route* /*route*/);
         int                                 getStatusCode();
         std::map<std::string, std::string>  getHeadersMap();
         const std::string&                  getParsedBody();

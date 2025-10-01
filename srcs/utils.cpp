@@ -1,11 +1,5 @@
 #include "../includes/includes.hpp"
 
-void    errorExit(std::string message)
-{
-    std::cerr << RED << "ERROR EXIT: " << message << std::endl;
-    exit(EXIT_FAILURE);
-}
-
 std::string loadFile(const std::string &path)
 {
     std::ifstream   file(path.c_str());
@@ -16,14 +10,6 @@ std::string loadFile(const std::string &path)
     std::stringstream   buffer;
     buffer << file.rdbuf();
     return (buffer.str());
-}
-
-std::string intToString(const std::string &str)
-{
-    std::stringstream   ss;
-
-    ss << str.length();
-    return (ss.str());
 }
 
 static int	count_char(long a)
@@ -75,23 +61,6 @@ char	*ftItoa(int n)
 	if (a <= 9)
 		num[i] = a + '0';
 	return (num);
-}
-
-std::string makeError(int code, const std::string& message)
-{
-	std::ostringstream oss;
-	std::ostringstream body;
-
-	body << "<html><body><h1>" << code << " " << message << "</h1></body></html>";
-
-	oss << "HTTP/1.1 " << code << " " << message << "\r\n"
-		<< "Content-Type: text/html\r\n"
-		<< "Content-Length: " << body.str().size() << "\r\n"
-		<< "Connection: close\r\n"
-		<< "\r\n"
-		<< body.str();
-
-	return oss.str();
 }
 
 std::string toLower(std::string line, size_t end)
@@ -146,22 +115,33 @@ size_t ft_strchr(const char *s, const char *str, int bytes, size_t pos)
 			i++;
 			j++;
 		}
-		//std::cout << "on a testé: ";
-		//for (size_t yo = temp; yo <= i; yo++){
-		//	std::cout << s[yo];
-		//}
-		//std::cout << std::endl;
-		//std::cout << "on a trouvé une string qui correspond" << std::endl;
-		//std::cout << "temp: " << temp << std::endl;
-		//std::cout << "i: " << i << std::endl;
-		//std::cout << "j: " << j << std::endl;
-		//std::cout << "strlen: " << std::strlen(str) << std::endl;
 		if (j == std::strlen(str))
-		{
-			//std::cout << "on retourne temp" << std::endl;
 			return temp;
-		}
 	}
-	//std::cout << "on retourne npos" << std::endl;
+
 	return std::string::npos;
+}
+
+std::string	intToString(int num) {
+	std::stringstream ss;
+	ss << num;
+	return (ss.str());
+}
+
+std::vector<char>	generateErrorResponse(int code, const std::string& statusMessage) {
+	std::string body = "<!DOCTYPE html><html lang=\"en\"><head><title>" + intToString(code) + " " +
+						statusMessage + "</title></head>" + "<body><hi>" + intToString(code) + " " +
+						statusMessage + "</h1>" + 
+						"<p>The server could not understand the request due to the malformed syntax.</p></body></html>";
+
+	std::stringstream res;
+	res << "HTTP/1.1 " << code << " " << statusMessage << "\r\n";
+   	res << "Content-Type: text/html\r\n";
+   	res << "Content-Length: " << body.length() << "\r\n";
+   	res << "Connection: close\r\n";
+   	res << "\r\n";
+   	res << body;
+
+	std::string resStr = res.str();
+	return (std::vector<char>(resStr.begin(), resStr.end()));
 }
