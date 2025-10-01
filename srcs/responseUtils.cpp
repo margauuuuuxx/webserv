@@ -254,7 +254,8 @@ std::string Response::_generateAutoIndex(const std::string& path, const std::str
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
         std::string name = entry->d_name;
-        if (name == ".") continue;
+        if (name == "." || name[0] == '.') 
+            continue;
 
         std::string href = reqURL;
         if (!href.empty() && href[href.length() - 1] != '/') {
@@ -298,7 +299,7 @@ std::string Response::_generateUploadJSON(const std::string& path) const {
         bool first = true;
         while ((entry = readdir(dir)) != NULL) {
             std::string name = entry->d_name;
-            if (name != "." && name != "..") {
+            if (name != "." && name != ".." && name[0] != '.') {
                 if (!first)
                     oss << ",";
                 oss << "\"" << name << "\"";
