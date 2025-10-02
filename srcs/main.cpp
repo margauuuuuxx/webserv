@@ -1,17 +1,18 @@
 #include "../includes/includes.hpp"
+#include "Response.hpp" // Make sure Response class is fully defined
 
-volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
+volatile sig_atomic_t stop = 0;
 
+// This function is for simple, fully-formed requests.
 std::vector<char> handleRequest(Request& request, Server& server){
 	Response res;
 	res.handleRequest(request, server);
-	request.reset();
 	return (res.getResponse());
 }
 
 void signalHandler(int sig) {
 	(void)sig;
-	stop  = 1; // change the value of the volatile var
+	stop  = 1;
 }
 
 int main(int argc, char **argv) {
@@ -24,14 +25,13 @@ int main(int argc, char **argv) {
 	std::vector<Server> servers = parser.getServer();
 	SocketArray sockets;
 	std::map<int, Socket*> fdToSocket;
-	std::map<int, std::vector<char> > pendingResponses; // stocke les réponses en attente
+	std::map<int, std::vector<char> > pendingResponses;
+	std::map<int, Response> chunkingResponses;
 
 	try {
 		Poller poller;
 
-		// Création des sockets serveurs
 		for (size_t i = 0; i < servers.size(); i++) {
-			std::cout << "i: " << i << std::endl;
 			try {
 				sockets.push_back(new Socket(servers[i].port));
 				sockets[i]->addServer(servers[i]);
@@ -43,7 +43,7 @@ int main(int argc, char **argv) {
 				std::cout << "because: " << e.what() << std::endl;
 			}
 		}
-		std::cout << "size " << sockets.size() << std::endl;
+		
 		if (sockets.size() == 0){
 			std::cout << "Couldn't create any server" << std::endl;
 			return 1;
@@ -58,11 +58,8 @@ int main(int argc, char **argv) {
 			for (size_t i = 0; i < fds.size(); ++i) {
 				int fd = fds[i].fd;
 
-				// ---- Nouveaux clients ou données à lire ----
 				if (fds[i].revents & POLLIN) {
 					bool isListener = false;
-
-					// Vérifie si c'est un socket serveur
 					for (size_t j = 0; j < sockets.size(); ++j) {
 						if (fd == sockets[j]->getFd()) {
 							int client_fd = sockets[j]->clientConnect();
@@ -75,8 +72,8 @@ int main(int argc, char **argv) {
 					}
 
 					if (!isListener) {
-						std::vector<char> buffer(MAX_REQUEST_SIZE); // IS IT THAT MACRO OR THE ONE IN THE CONFIG FILE ??
-						ssize_t bytes = recv(fd, &buffer[0], buffer.size(), 0); // last parameter = flags
+						std::vector<char> buffer(MAX_REQUEST_SIZE);
+						ssize_t bytes = recv(fd, &buffer[0], buffer.size(), 0);
 
 						if (bytes <= 0) {
 							std::cout << "Client déconnecté (fd=" << fd << ")" << std::endl;
@@ -84,10 +81,10 @@ int main(int argc, char **argv) {
 							poller.removeFd(fd);
 							fdToSocket.erase(fd);
 							pendingResponses.erase(fd);
+							chunkingResponses.erase(fd);
 							continue;
 						}
 
-						// Trouver le socket associé
 						std::map<int, Socket*>::iterator it = fdToSocket.find(fd);
 						if (it != fdToSocket.end()) {
 							Socket* sock = it->second;
@@ -98,37 +95,65 @@ int main(int argc, char **argv) {
 							request.parse(server->clientMaxBodySize);
 
 							if (request.parsingFinished()) {
-								std::vector<char> response = handleRequest(request, *server);
-								if (!response.empty()) {
-									pendingResponses[fd] = response;
-									poller.modifyFd(fd, POLLOUT); // passe en écriture
+								Response& res = chunkingResponses[fd];
+								res.handleRequest(request, *server);
+
+								if (res.isChunkingActive())
+									poller.modifyFd(fd, POLLOUT);
+								else {
+									std::vector<char> responseData = res.getResponse();
+									if (!responseData.empty()) {
+										pendingResponses[fd] = responseData;
+										poller.modifyFd(fd, POLLOUT);
+									}
+									chunkingResponses.erase(fd);
 								}
+								request.reset();
 							} else if (request.parsingError()) {
 								int code = request.getErrorCode();
 								const std::string& message = request.getStatusMessage();
 								std::vector<char> response = generateErrorResponse(code, message);
 								pendingResponses[fd] = response;
 								poller.modifyFd(fd, POLLOUT);
+								request.reset();
 							}
 						}
 					}
-				}
-
-				// ---- Données à envoyer ----
-				else if (fds[i].revents & POLLOUT) {
-					std::map<int, std::vector<char> >::iterator it = pendingResponses.find(fd);
-					if (it != pendingResponses.end()) {
-						std::vector<char> &data = it->second;
-						ssize_t sent = send(fd, &data[0], data.size(), 0);
-
-						if (sent > 0) {
-							data.erase(data.begin(), data.begin() + sent); // Supprime la partie envoyée
+				} else if (fds[i].revents & POLLOUT) {
+					std::map<int, Response>::iterator it_chunk = chunkingResponses.find(fd);
+					if (it_chunk != chunkingResponses.end()) {
+						Response& res = it_chunk->second;
+						
+						if (res.getResponseBuffer().empty() && res.isChunkingActive()) {
+							res.prepareNextChunk(4096);
 						}
 
-						// Si tout est envoyé, retour en lecture
-						if (data.empty()) {
-							pendingResponses.erase(fd);
+						const std::vector<char>& buffer = res.getResponseBuffer();
+						if (!buffer.empty()) {
+							ssize_t sent = send(fd, &buffer[0], buffer.size(), 0);
+							if (sent > 0) {
+								res.consumeBufferBytes(sent);
+							}
+						}
+
+						if (!res.isChunkingActive() && res.getResponseBuffer().empty()) {
+							chunkingResponses.erase(it_chunk);
 							poller.modifyFd(fd, POLLIN);
+						}
+					} else {
+						std::map<int, std::vector<char> >::iterator it = pendingResponses.find(fd);
+						if (it != pendingResponses.end()) {
+							std::vector<char> &data = it->second;
+							ssize_t sent = send(fd, &data[0], data.size(), 0);
+
+							if (sent > 0) {
+								data.erase(data.begin(), data.begin() + sent);
+							}
+
+							if (data.empty()) {
+								pendingResponses.erase(it);
+								poller.modifyFd(fd, POLLIN);
+							}
 						}
 					}
 				}
@@ -141,5 +166,5 @@ int main(int argc, char **argv) {
 
 	std::cout << "=== server shutdown ===" << std::endl;
 
-	return (0);
+	return 0;
 }

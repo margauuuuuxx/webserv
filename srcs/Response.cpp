@@ -1,6 +1,6 @@
 #include "../includes/includes.hpp"
 
-Response::Response() : _contentSize(0), _statusCode(0) { 
+Response::Response() : _contentSize(0), _statusCode(0), _isChunkingActive(false) { 
     _initMIMETypes(); 
     _initStatusMessages();
 }
@@ -8,8 +8,7 @@ Response::Response() : _contentSize(0), _statusCode(0) {
 Response::~Response() {}
 
 void Response::_handleGET(Request& req, Server& server, Route* route) {
-    std::string resourcePath = route->path; // PARSER 
-    // HAVING THE RIGHT PATH FOR /hello/index.html --> www/index.html
+    std::string resourcePath = route->path;
 
     if (!resourcePath.empty())
         DEBUG_LOG(YELLOW << "GET" << std::endl << RESET << "Route path = " << route->path << std::endl << "Content = " << req.getContent() << std::endl << "GET resource path: " << resourcePath << std::endl << YELLOW << "-----------" << RESET);
@@ -63,13 +62,8 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             handleCGI(*this, resourcePath, req, server, route);
             return;
         }
-        else {
-            std::string MIMEType = _getMIMEType(resourcePath);
-            if (readFile(resourcePath, this->_content))
-                _buildResponse(200, req, 0, MIMEType);
-            else 
-                buildErrorResponse(403, req, server);
-        }
+        else
+            initiateFileSend(resourcePath, req, server);
     }
     else
         buildErrorResponse(404, req, server);
@@ -205,7 +199,6 @@ std::vector<char> Response::getResponse() const {
     
     std::string resStr = res.str();
     std::vector<char> resVector(resStr.begin(), resStr.end());
-    // CONVERTIR EN OCTETS 
 
     return (resVector);
 }

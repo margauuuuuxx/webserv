@@ -5,6 +5,7 @@ void    Response::_initStatusMessages() {
     _statusMessages[201] = "Created";
     _statusMessages[204] = "No Content";
     _statusMessages[404] = "Not Found";
+    _statusMessages[403] = "Forbidden";
     _statusMessages[405] = "Method Not Allowed";
     _statusMessages[409] = "Conflict";
     _statusMessages[413] = "Content Too Large";
@@ -194,8 +195,66 @@ void    Response::_constructRelativePath(Request &req, Route* route) {
     route->path = path;
 }
 
+void    Response::initiateFileSend(const std::string& filePath, Request& req, Server& server) {
+    struct stat file_stat;
+    if (stat(filePath.c_str(), &file_stat) != 0) {
+        buildErrorResponse(404, req, server);
+        this->_responseBuffer = getResponse();
+        DEBUG_LOG(RED << "Error: " << RESET << "Could not get file stat for file path: " << filePath);
+        return;
+    }
+
+    _fileStream.open(filePath.c_str(), std::ios::binary);
+    if (!_fileStream.is_open()) {
+        buildErrorResponse(403, req, server);
+        this->_responseBuffer = getResponse();
+        DEBUG_LOG(RED << "Error: " << RESET << "Forbidden: Could not open _fileStream");
+        return;
+    }
+
+    _isChunkingActive = true;
+
+    // Build and buffer the initial headers for a chunked response
+    std::ostringstream oss;
+    oss << req.getVersion() << " 200 OK\r\n";
+    oss << "Content-Type: " << _getMIMEType(filePath) << "\r\n";
+    oss << "Transfer-Encoding: chunked\r\n";
+    oss << "Connection: close\r\n";
+    oss << "\r\n";
+
+    std::string headers = oss.str();
+    _responseBuffer.assign(headers.begin(), headers.end());
+}
+
+void    Response::prepareNextChunk(size_t maxChunkSize) {
+    if (!_isChunkingActive || !_fileStream.is_open()) {
+        DEBUG_LOG("prepareNextChunk: condition(s) not fulfilled");
+        return;
+    }
+
+    std::vector<char> chunkData(maxChunkSize);
+    _fileStream.read(&chunkData[0], maxChunkSize);
+    size_t bytesRead = _fileStream.gcount();
+
+    if (bytesRead > 0) {
+        std::ostringstream chunkSizeHex;
+        chunkSizeHex << std::hex << bytesRead;
+
+        std::string chunkHeader = chunkSizeHex.str() + "\r\n";
+        _responseBuffer.insert(_responseBuffer.end(), chunkHeader.begin(), chunkHeader.end());
+        _responseBuffer.insert(_responseBuffer.end(), chunkData.begin(), chunkData.begin() + bytesRead);
+        const char* crlf = "\r\n";
+        _responseBuffer.insert(_responseBuffer.end(), crlf, crlf + 2);
+    } else {
+        const char* zeroChunk = "0\r\n\r\n";
+        _responseBuffer.insert(_responseBuffer.end(), zeroChunk, zeroChunk + 5);
+        _isChunkingActive = false;
+        _fileStream.close();
+    }
+}
+
 std::string Response::_generateAutoIndex(const std::string& path, const std::string& reqURL) const {
-    //DEBUG_LOG(YELLOW << "AUTOINDEX" << RESET);
+    DEBUG_LOG(YELLOW << "AUTOINDEX" << RESET);
 
     std::ostringstream oss;
     oss << "<!DOCTYPE html>\n";
@@ -331,3 +390,14 @@ bool    isCGIReq(const std::string& resource, const Route* route)
 
     return (false);
 }
+
+void    Response::consumeBufferBytes(size_t bytesSent) {
+    if (bytesSent > 0 && bytesSent <= _responseBuffer.size())
+        _responseBuffer.erase(_responseBuffer.begin(), _responseBuffer.begin() + bytesSent);
+}
+
+bool    Response::isChunkingActive() const { return (_isChunkingActive || !_responseBuffer.empty()); }
+
+const std::vector<char> &Response::getResponseBuffer() const { return (_responseBuffer); }
+
+

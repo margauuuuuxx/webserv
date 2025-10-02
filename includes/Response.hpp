@@ -14,10 +14,15 @@ public:
     Response();
     ~Response();
 
-    void        handleRequest(Request& req, Server& server);
-    std::vector<char> getResponse() const;
-    void        buildErrorResponse(int code, Request& req, Server& server);
-    void        buildCGIResponse(CGI &CGIobj);
+    void                    handleRequest(Request& req, Server& server);
+    std::vector<char>       getResponse() const;
+    void                    buildErrorResponse(int code, Request& req, Server& server);
+    void                    buildCGIResponse(CGI &CGIobj);
+    void                    initiateFileSend(const std::string& filePath, Request& req, Server& server);
+    bool                    isChunkingActive() const;
+    void                    prepareNextChunk(size_t maxChunkSize);
+    const std::vector<char> &getResponseBuffer() const;
+    void                    consumeBufferBytes(size_t bytesSent);
 
 private:
     void                _handleGET(Request& req, Server& server, Route* route);
@@ -40,4 +45,7 @@ private:
     std::map<std::string, std::string>  _headersMap;
     std::map<std::string, std::string>  _MIMETypes;
     std::map<int, std::string>          _statusMessages;
+    std::ifstream                       _fileStream;
+    bool                                _isChunkingActive;
+    std::vector<char>                   _responseBuffer;
 };
