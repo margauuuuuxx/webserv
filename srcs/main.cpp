@@ -141,8 +141,5 @@ int main(int argc, char **argv) {
 
 	std::cout << "=== server shutdown ===" << std::endl;
 
-	for (size_t i = 0; i < sockets.size(); ++i)
-		delete (sockets[i]);
-
 	return (0);
 }
