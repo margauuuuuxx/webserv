@@ -4,7 +4,7 @@
 	This class is responsible for building the appropriate HTTP response based on the parsed Request object and the Server config.
 */
 
-Request::Request(void) {this->reset();}
+Request::Request(void) { this->reset(); }
 
 Request::~Request(void) {}
 
@@ -35,25 +35,6 @@ std::set<std::string> createSet(void) {
 
 const std::set<std::string> uniqueHeaders = createSet();
 
-/*
-	La fonction vérifie si la string contient uniquement des whitespaces.
-*/
-int isRawEmpty(std::string &raw)
-{
-	size_t count = 0;
-
-	if (raw.empty())
-		return (1);
-	for (std::string::iterator it = raw.begin(); it != raw.end(); it++)
-	{
-		if (std::isspace(*it))
-			count++;
-	}
-	if (count == raw.length())
-		return (1);
-	return (0);
-}
-
 std::string	const	&Request::getMethod(void) const {
 	return (this->_method);
 }
@@ -76,42 +57,13 @@ std::map<std::string, std::string>	const	&Request::getHeaders(void) const {
 
 const std::vector<char>	&Request::getBody(void) const { return (this->_body); }
 
-std::string const &Request::getRawRequest(void) const {
-	return (this->_rawRequest);
-}
-
 size_t const &Request::getContentLen(void) const{
 	return (this->_contentLen);
-}
-
-size_t const &Request::getContentLenCopy(void) const{
-	return (this->_contentLenCopy);
-}
-
-bool const &Request::getTransferEncoding(void) const{
-	return (this->_transferEncoding);
-}
-
-bool const &Request::getWaitingState(void) const{
-	return (this->_waitingForData);
-}
-
-bool const &Request::getErrorFlag(void) const {
-	return (this->_error);
 }
 
 int	Request::getErrorCode(void) const { return (this->_errorCode); }
 
 const std::string	&Request::getStatusMessage(void) const { return (this->_statusMessage); }
-
-void Request::setContentLen(size_t len){
-	this->_contentLen = len;
-	this->_contentLenCopy = len - 1;
-}
-
-void Request::setTransferEncoding(bool state){
-	this->_transferEncoding = state;
-}
 
 void	Request::setClientIP(const std::string& ip) {
 	this->_clientIP = ip;
@@ -126,11 +78,7 @@ void	Request::assignError(int code, const std::string& message) {
 
 void Request::reset(void)
 {
-	this->_appendLen = 0;
 	this->_contentLen = std::string::npos;
-	this->_contentLenCopy = std::string::npos;
-	this->_transferEncoding = false;
-	this->_waitingForData = false;
 	this->_error = false;
 	this->_content.clear();
 	this->_rawRequest.clear();
@@ -141,29 +89,6 @@ void Request::reset(void)
 	this->_parsingState = PARSING_REQUEST_LINE;
 	this->_errorCode = 0; 
 	this->_statusMessage.clear();
-}
-
-size_t countLenTransferEncoding(std::string buffer)
-{
-	std::istringstream iss(buffer);
-	size_t len;
-
-	if (!(iss >> std::hex >> len))
-		return (std::string::npos);
-	
-	return (len);
-}
-
-int checkCRLF(std::string &buffer)
-{
-	for (size_t i = 1; i < buffer.size(); ++i)
-	{
-		if (buffer[i] == '\r' && i + 1 >= buffer.size() && buffer[i + 1] != '\n')
-			return (0);
-		if (buffer[i] == '\n' && buffer[i - 1] != '\r')
-			return (0);
-	}
-	return (1);
 }
 
 void	Request::appendBody(char *cbuffer, size_t bytes) {
@@ -184,7 +109,7 @@ void Request::parse(size_t clientMaxBodySize) {
 					std::string line = _rawRequest.substr(0, pos);
 					
 					if (line.size() > MAX_REQUEST_LINE_SIZE) {
-						assignError(413, "Content Too Large"); // CHECK THE USE OF THESE FCTS
+						assignError(413, "Content Too Large");
 						DEBUG_LOG(RED << "Error: " << RESET << "413 Content Too Large in the parsing of the request line");
 						return;
 					}
@@ -262,7 +187,6 @@ void Request::parse(size_t clientMaxBodySize) {
 								DEBUG_LOG(RED << "Error: " << RESET << "400 Bad Request in headers parsing");
 								return;
 							}
-							this->_transferEncoding = true;
 							this->_parsingState = PARSING_CHUNKED_BODY;
 						}
 					else if (this->_headers.count("content-length")) {
