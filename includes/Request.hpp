@@ -31,7 +31,7 @@ public:
 	void										setContentLen(size_t len);
 	void										setTransferEncoding(bool state);
 	void										setClientIP(const std::string& ip);
-	void										parse(void);
+	void										parse(size_t clientMaxBodySize);
 	void										reset(void);
 	bool										requestState(void);
 	bool										parsingFinished() const;

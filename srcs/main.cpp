@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
 							Request& request = server->requests[fd];
 							request.setClientIP(sock->getClientIP());
 							request.appendToRawRequest(&buffer[0], bytes);
-							request.parse();
+							request.parse(server->clientMaxBodySize);
 
 							if (request.parsingFinished()) {
 								std::vector<char> response = handleRequest(request, *server);

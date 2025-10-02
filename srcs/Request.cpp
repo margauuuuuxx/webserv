@@ -175,7 +175,7 @@ void	Request::appendToRawRequest(const char* buffer, int bytes) {
 	this->_rawRequest.append(buffer, bytes);
 }
 
-void Request::parse(void){
+void Request::parse(size_t clientMaxBodySize) {
 	while (_parsingState != PARSING_DONE && _parsingState != PARSING_ERROR) {
 		switch(_parsingState) {
 			case PARSING_REQUEST_LINE: {
@@ -286,7 +286,7 @@ void Request::parse(void){
 				break;
 			}
 			case PARSING_BODY: {
-				if (this->_contentLen > MAX_BODY_SIZE) {
+				if (this->_contentLen > clientMaxBodySize) {
 					assignError(413, "Content Too Large");
 					DEBUG_LOG(RED << "Error: " << RESET << "413 Content Too Large in body parsing");
 					return;
