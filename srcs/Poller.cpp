@@ -9,8 +9,10 @@
 Poller::Poller() {}
 
 Poller::~Poller() {
-    for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it)
+    for (std::vector<struct pollfd>::iterator it = _fds.begin(); it != _fds.end(); ++it) {
+        DEBUG_LOG("fd " << intToString(it->fd) << " closed in Poller's destructor");
         close(it->fd);
+    }
 }
 
 void Poller::addFd(int fd, short events) {

@@ -16,9 +16,8 @@ void signalHandler(int sig) {
 }
 
 int main(int argc, char **argv) {
-	if (argc != 2) {
+	if (argc != 2)
 		return std::cout << RED << "Error: " << RESET << "wrong number of args" << std::endl, 1;	
-	}
 
 	Parser parser;
 	parser.parsefile(argv[1]);
@@ -27,6 +26,8 @@ int main(int argc, char **argv) {
 	std::map<int, Socket*> fdToSocket;
 	std::map<int, std::vector<char> > pendingResponses;
 	std::map<int, Response> chunkingResponses;
+	std::map<int, int> CGIPipeToClientFd;
+	std::map<int, pid_t> clientFdtoCGIPid;
 
 	try {
 		Poller poller;
@@ -36,16 +37,15 @@ int main(int argc, char **argv) {
 				sockets.push_back(new Socket(servers[i].port));
 				sockets[i]->addServer(servers[i]);
 				poller.addFd(sockets[i]->getFd(), POLLIN);
-				std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
+				DEBUG_LOG("Serveur en écoute sur le port " << servers[i].port);
 			}
 			catch (const std::exception& e) {
-				std::cout << "Can't create server on port " << servers[i].port << std::endl;
-				std::cout << "because: " << e.what() << std::endl;
+				std::cout << RED << "Error: " << RESET "Can't create server on port " << servers[i].port << " because: " << e.what() << std::endl;
 			}
 		}
 		
 		if (sockets.size() == 0){
-			std::cout << "Couldn't create any server" << std::endl;
+			DEBUG_LOG(RED << "Error: " << RESET << "Couldn't create any server");
 			return 1;
 		}
 
@@ -71,13 +71,40 @@ int main(int argc, char **argv) {
 						}
 					}
 
-					if (!isListener) {
+					if (!isListener && CGIPipeToClientFd.count(fd)) {
+						int client_fd = CGIPipeToClientFd[fd];
+						Response& res = chunkingResponses[client_fd];
+
+						res.handleCGI();
+
+						if (!res.isCGI()) {
+							DEBUG_LOG(GREEN << "CGI process for client " << client_fd << " finished" << RESET);
+
+							pid_t cgi_pid = clientFdtoCGIPid[client_fd];
+							waitpid(cgi_pid, NULL, 0);
+
+							poller.removeFd(fd);
+							CGIPipeToClientFd.erase(fd);
+							clientFdtoCGIPid.erase(client_fd);
+
+							std::vector<char> responseData = res.getResponse();
+							if (!responseData.empty()) {
+								pendingResponses[client_fd] = responseData;
+								poller.modifyFd(client_fd, POLLOUT);
+							} else {
+								chunkingResponses.erase(client_fd);
+								poller.modifyFd(client_fd, POLLIN);
+							}
+						}
+					}
+
+					else if (!isListener) {
 						std::vector<char> buffer(MAX_REQUEST_SIZE);
 						ssize_t bytes = recv(fd, &buffer[0], buffer.size(), 0);
 
 						if (bytes <= 0) {
-							std::cout << "Client déconnecté (fd=" << fd << ")" << std::endl;
-							close(fd);
+							DEBUG_LOG(YELLOW << "Client fd = " << fd << " déconnecté" << RESET);
+							cleanCGI(fd, poller, clientFdtoCGIPid, CGIPipeToClientFd);
 							poller.removeFd(fd);
 							fdToSocket.erase(fd);
 							pendingResponses.erase(fd);
@@ -98,7 +125,17 @@ int main(int argc, char **argv) {
 								Response& res = chunkingResponses[fd];
 								res.handleRequest(request, *server);
 
-								if (res.isChunkingActive())
+								if (res.isCGI()) {
+									pid_t cgi_pid = res.getCGIPid();
+									int pipe_fd = res.getCGIPipeFd();
+
+									poller.addFd(pipe_fd, POLLIN);
+									CGIPipeToClientFd[pipe_fd] = fd;
+									clientFdtoCGIPid[fd] = cgi_pid;
+
+									DEBUG_LOG("Started CGI process " << cgi_pid << " for client " << fd);
+								}
+								else if (res.isChunkingActive())
 									poller.modifyFd(fd, POLLOUT);
 								else {
 									std::vector<char> responseData = res.getResponse();
@@ -124,16 +161,14 @@ int main(int argc, char **argv) {
 					if (it_chunk != chunkingResponses.end()) {
 						Response& res = it_chunk->second;
 						
-						if (res.getResponseBuffer().empty() && res.isChunkingActive()) {
+						if (res.getResponseBuffer().empty() && res.isChunkingActive())
 							res.prepareNextChunk(4096);
-						}
 
 						const std::vector<char>& buffer = res.getResponseBuffer();
 						if (!buffer.empty()) {
 							ssize_t sent = send(fd, &buffer[0], buffer.size(), 0);
-							if (sent > 0) {
+							if (sent > 0)
 								res.consumeBufferBytes(sent);
-							}
 						}
 
 						if (!res.isChunkingActive() && res.getResponseBuffer().empty()) {
@@ -146,9 +181,8 @@ int main(int argc, char **argv) {
 							std::vector<char> &data = it->second;
 							ssize_t sent = send(fd, &data[0], data.size(), 0);
 
-							if (sent > 0) {
+							if (sent > 0)
 								data.erase(data.begin(), data.begin() + sent);
-							}
 
 							if (data.empty()) {
 								pendingResponses.erase(it);
@@ -161,10 +195,10 @@ int main(int argc, char **argv) {
 		}
 	}
 	catch (std::exception& e) {
-		std::cerr << "Erreur : " << e.what() << std::endl;
+		std::cerr << RED << "Error: " << RESET << e.what() << std::endl;
 	}
 
-	std::cout << "=== server shutdown ===" << std::endl;
+	DEBUG_LOG("----------------- server shutdown -----------------");
 
-	return 0;
+	return (0);
 }

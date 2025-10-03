@@ -57,48 +57,6 @@ void	CGI::_vectToArray(const std::vector<std::string>& v) {
 	_envv[i] = NULL;
 }
 
-
-void	CGI::_readCGI(int fd) {
-    char        buffer[4096];
-    ssize_t     bytesRead;
-
-    while ((bytesRead = read(fd, buffer, sizeof(buffer))) > 0)
-        _CGIoutput.append(buffer, bytesRead);
-    close(fd);
-}
-
-
-int CGI::getStatusCode() { 
-    std::map<std::string, std::string>::const_iterator it = _headersMap.find("Status");
-    if (it != _headersMap.end())
-        return (stringToInt(it->second));
-    return (200);
-}
-
-std::map<std::string, std::string>  CGI::getHeadersMap() {
-    std::map<std::string, std::string>::const_iterator it = _headersMap.find("Status");
-    if (it != _headersMap.end())
-        _headersMap.erase("Status");
-    return (_headersMap);
-}
-
-const std::string&  CGI::getParsedBody() { return (this->_parsedBody); }
-
-const std::string&  CGI::getHTTPVersion() { return (_req.getVersion()); }
-
-int  stringToInt(const std::string &s) {
-    std::stringstream ss(s);
-    int num = 0;
-    ss >> num;
-    return (num);
-}
-
-std::string toString(int nbr) {
-    std::ostringstream oss;
-    oss << nbr;
-    return (oss.str());
-}
-
 void    closePipes(int pipe1[2], int pipe2[2]) {
     if (pipe1[0] != -1)
         close(pipe1[0]);

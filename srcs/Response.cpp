@@ -1,11 +1,14 @@
 #include "../includes/includes.hpp"
 
-Response::Response() : _contentSize(0), _statusCode(0), _isChunkingActive(false) { 
+Response::Response() : _contentSize(0), _statusCode(0), _isChunkingActive(false), _CGI(NULL), _CGI_pid(-1), _CGI_pipe_fd(-1), _isCGI(false) { 
     _initMIMETypes(); 
     _initStatusMessages();
 }
 
-Response::~Response() {}
+Response::~Response() {
+    if (_CGI)
+        delete _CGI;
+}
 
 void Response::_handleGET(Request& req, Server& server, Route* route) {
     std::string resourcePath = route->path;
@@ -58,10 +61,8 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
         }
     }
     else if (S_ISREG(path_stat.st_mode)) { // file 
-        if (isCGIReq(req.getContent(), route)) {
-            handleCGI(*this, resourcePath, req, server, route);
-            return;
-        }
+        if (isCGIReq(req.getContent(), route))
+            _startCGI(resourcePath, req, server, route);
         else
             initiateFileSend(resourcePath, req, server);
     }
@@ -82,8 +83,7 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
 
     if (isCGIReq(req.getContent(), route)) {
         std::string filename = route->root + req.getContent();
-        handleCGI(*this, filename, req, server, route);
-        return;
+        _startCGI(filename, req, server, route);
     }
 
     if (route->uploadEnabled) {

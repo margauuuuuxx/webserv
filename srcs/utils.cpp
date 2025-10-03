@@ -145,3 +145,23 @@ std::vector<char>	generateErrorResponse(int code, const std::string& statusMessa
 	std::string resStr = res.str();
 	return (std::vector<char>(resStr.begin(), resStr.end()));
 }
+
+void	cleanCGI(int client_fd, Poller& poller, std::map<int, pid_t>& clientFdToCGIPid, std::map<int, int>& CGIPipeToClientFd) {
+	std::map<int, pid_t>::iterator it_pid = clientFdToCGIPid.find(client_fd);
+	if (it_pid != clientFdToCGIPid.end()) {
+		pid_t	cgi_pid = it_pid->second;
+
+		for (std::map<int, int>::iterator it_pipe = CGIPipeToClientFd.begin(); it_pipe != CGIPipeToClientFd.end(); ++it_pipe) {
+			if (it_pipe->second == client_fd) {
+				poller.removeFd(it_pipe->first);
+				CGIPipeToClientFd.erase(it_pipe);
+				break;
+			}
+		}
+
+		kill(cgi_pid, SIGKILL);
+		waitpid(cgi_pid, NULL, 0);
+		clientFdToCGIPid.erase(it_pid);
+		DEBUG_LOG("CGI process cleaned up for disconnected client " << client_fd);
+	}
+}

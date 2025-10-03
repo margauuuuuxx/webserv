@@ -5,7 +5,6 @@
 class Request;
 class Server;
 struct Route;
-class CGI;
 
 extern const std::map<int, std::string> statusMessages;
 
@@ -17,12 +16,15 @@ public:
     void                    handleRequest(Request& req, Server& server);
     std::vector<char>       getResponse() const;
     void                    buildErrorResponse(int code, Request& req, Server& server);
-    void                    buildCGIResponse(CGI &CGIobj);
     void                    initiateFileSend(const std::string& filePath, Request& req, Server& server);
     bool                    isChunkingActive() const;
     void                    prepareNextChunk(size_t maxChunkSize);
     const std::vector<char> &getResponseBuffer() const;
     void                    consumeBufferBytes(size_t bytesSent);
+    bool                    isCGI() const;
+    int                     getCGIPipeFd() const;
+    pid_t                   getCGIPid() const;
+    void                    handleCGI();
 
 private:
     void                _handleGET(Request& req, Server& server, Route* route);
@@ -48,4 +50,9 @@ private:
     std::ifstream                       _fileStream;
     bool                                _isChunkingActive;
     std::vector<char>                   _responseBuffer;
+    CGI*                                _CGI;
+    pid_t                               _CGI_pid;
+    int                                 _CGI_pipe_fd;
+    bool                                _isCGI;
+    void                                _startCGI(const std::string& scriptPath, Request& req, Server& server, Route* route);
 };

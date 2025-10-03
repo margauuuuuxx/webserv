@@ -94,21 +94,68 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
     _setHeaders("text/html");
 }
 
-void    Response::buildCGIResponse(CGI& CGIobj) {
-    _statusCode = CGIobj.getStatusCode();
-    _httpVersion = CGIobj.getHTTPVersion();
-    _content = CGIobj.getParsedBody();
-    _contentSize = _content.length();
-    _headersMap = CGIobj.getHeadersMap();
+void    Response::_startCGI(const std::string& scriptPath, Request& req, Server& server, Route* route) {
+    _CGI = new CGI(req, server, scriptPath, route);
+    _CGI_pid = _CGI->execute();
 
-    std::stringstream ss;
-    ss << _contentSize;
-    _headersMap["Content-Length"] = ss.str(); // conversion bc HTTP protocol is text-based
-
-    if (_headersMap.find("Content-Type") == _headersMap.end())
-        _headersMap["Content-Type"] = "text/html";
+    if (_CGI_pid > 0) {
+        _isCGI = true;
+        _CGI_pipe_fd = _CGI->getPipeReadFd();
+    } else {
+        delete (_CGI);
+        _CGI = NULL;
+        buildErrorResponse(500, req, server); // Internal Server Error
+    }
 }
 
+void    Response::handleCGI() {
+    char buffer[4096];
+    ssize_t bytesRead = read(_CGI_pipe_fd, buffer, sizeof(buffer));
+
+    if (bytesRead > 0)
+        _content.append(buffer, bytesRead);
+    else {
+        close(_CGI_pipe_fd);
+        _isCGI = false;
+
+        std::string headers;
+        std::string body;
+
+        size_t sep = _content.find("\r\n\r\n");
+        if (sep != std::string::npos) {
+            headers = _content.substr(0, sep);
+            body = _content.substr(sep + 4);
+        } else 
+            body = _content;
+        
+        _content = body;
+        _statusCode = 200; // OK
+
+        // Parsing CGI headers
+        std::istringstream iss(headers);
+        std::string line;
+        while (std::getline(iss, line)) {
+            if (line.empty() || line == "\r")
+                continue;
+            
+            size_t pos = line.find(":");
+            if (pos != std::string::npos) {
+                std::string key = line.substr(0, pos);
+                std::string value = line.substr(pos + 1);
+                value.erase(0, value.find_first_not_of(" \t"));
+                if (!value.empty() && value.back() == '\r')
+                    value.pop_back();
+                if (key == "Status")
+                    _statusCode = std::atoi(value.c_str());
+                else
+                    _headersMap[key] = value;
+            }
+        }
+        if (_headersMap.find("Content-Type") == _headersMap.end())
+            _headersMap["Content-Type"] = "text/html";
+        _headersMap["Content-Length"] = _content.length();
+    }
+}
 
 void    Response::_setHeaders(const std::string& MIMEType) {
     _headersMap.clear();
@@ -390,6 +437,12 @@ bool    isCGIReq(const std::string& resource, const Route* route)
 
     return (false);
 }
+
+bool    Response::isCGI() const { return (this->_isCGI); }
+
+int Response::getCGIPipeFd() const { return (this->_CGI_pipe_fd); }
+
+pid_t   Response::getCGIPid() const { return (this->_CGI_pid); }
 
 void    Response::consumeBufferBytes(size_t bytesSent) {
     if (bytesSent > 0 && bytesSent <= _responseBuffer.size())
