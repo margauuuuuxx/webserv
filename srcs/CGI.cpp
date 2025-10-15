@@ -134,6 +134,7 @@ void	CGI::execute(Route* route) {
 		DEBUG_LOG(RED << "EXIT: " << RESET << "handleCGI: execve() failed");
 		exit(EXIT_FAILURE);
 	} else { // parent 
+
 		close(pipe_in[0]);
 		close(pipe_out[1]);
 		if (!_req.getBody())
