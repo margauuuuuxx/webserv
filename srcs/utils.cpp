@@ -125,3 +125,43 @@ std::string ftStrtrim(std::string s)
 	}
 	return (s.substr(start, len));
 }
+
+size_t ft_strchr(const char *s, const char *str, int bytes, size_t pos)
+{
+	size_t max = static_cast<size_t>(bytes);
+	//std::cout << "\e[0;31mmax: " << max << std::endl;
+	//std::cout << "pos: " << pos << "\e[0;m" << std::endl;
+	if (pos == std::string::npos || pos >= max)
+	{
+		//std::cout << "pos est pas bon: " << pos << std::endl;
+		return std::string::npos;
+	}
+	size_t temp;
+	for (size_t i = pos; i < max; i++){
+		size_t j = 0;
+		if (s[i] != str[j])
+			continue ;
+		temp = i;
+		while (i < max && str[j] && s[i] == str[j]){
+			i++;
+			j++;
+		}
+		//std::cout << "on a testé: ";
+		//for (size_t yo = temp; yo <= i; yo++){
+		//	std::cout << s[yo];
+		//}
+		//std::cout << std::endl;
+		//std::cout << "on a trouvé une string qui correspond" << std::endl;
+		//std::cout << "temp: " << temp << std::endl;
+		//std::cout << "i: " << i << std::endl;
+		//std::cout << "j: " << j << std::endl;
+		//std::cout << "strlen: " << std::strlen(str) << std::endl;
+		if (j == std::strlen(str))
+		{
+			//std::cout << "on retourne temp" << std::endl;
+			return temp;
+		}
+	}
+	//std::cout << "on retourne npos" << std::endl;
+	return std::string::npos;
+}

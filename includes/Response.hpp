@@ -26,6 +26,7 @@ private:
     void                _buildResponse(int statusCode, Request& req, bool upload, const std::string& MIMEType);
     Route*              _findRoute(Request& req, Server &server) const;
     std::string         _generateAutoIndex(const std::string& path, const std::string& reqURL) const;
+    std::string         _generateUploadJSON(const std::string& path) const;
     void                _setHeaders(const std::string& MIMEType);
     void                _initMIMETypes();
     void                _initStatusMessages();

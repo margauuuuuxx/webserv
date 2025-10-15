@@ -7,6 +7,7 @@ void    Response::_initStatusMessages() {
     _statusMessages[404] = "Not Found";
     _statusMessages[405] = "Method Not Allowed";
     _statusMessages[409] = "Conflict";
+    _statusMessages[413] = "Content Too Large";
     _statusMessages[500] = "Internal Server Error";
     _statusMessages[501] = "Not Implemented";
     _statusMessages[504] = "Gateway Timeout";
@@ -42,8 +43,7 @@ void    Response::_buildResponse(int statusCode, Request& req, bool upload, cons
 void Response::buildErrorResponse(int code, Request& req, Server& server) {
     this->_statusCode = code;
     this->_httpVersion = req.getVersion();
-    _setHeaders("text/html");
-
+    
     // Check for a custom error page in the server config.
     std::map<int, std::string>::const_iterator it = server.errorPages.find(code);
     if (it != server.errorPages.end()) { // CHECK FOR ERROR PAGES 
@@ -53,19 +53,44 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
             return;
         }
     }
-
+    
     // If no custom page, create a default one.
     std::ostringstream oss;
     std::string statusMessage = "Unknown status";
     std::map<int, std::string>::const_iterator it2 = _statusMessages.find(this->_statusCode);
     if (it2 != _statusMessages.end())
-        statusMessage = it2->second;
-    
-    oss << "<html>\n<head><title>" << this->_statusCode << " " << statusMessage
-        << "</title></head>\n<body>\n<h1>" << this->_statusCode << " " << statusMessage
-        << "</h1>\n</body>\n</html>";
+    statusMessage = it2->second;
+
+    oss << "<!DOCTYPE html>\n"
+        << "<html lang=\"en\">\n"
+        << "<head>\n"
+        << "    <meta charset=\"UTF-8\">\n"
+        << "    <title>" << this->_statusCode << " " << statusMessage << "</title>\n"
+        << "    <style>\n"
+        << "        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }\n"
+        << "        body { background: linear-gradient(135deg, #f5f7fa, #c3cfe2); color: #333; display: flex; justify-content: center; align-items: center; height: 100vh; text-align: center; }\n"
+        << "        .container { background: rgba(255, 255, 255, 0.9); padding: 50px 80px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1); max-width: 600px; }\n"
+        << "        h1 { font-size: 3rem; margin-bottom: 20px; color: #d9534f; }\n"
+        << "        p { font-size: 1.2rem; color: #555; margin-bottom: 30px; }\n"
+        << "        .buttons { display: flex; justify-content: center; gap: 20px; }\n"
+        << "        .btn { padding: 15px 30px; font-size: 1.2rem; color: #fff; background-color: #007bff; border: none; border-radius: 5px; text-decoration: none; transition: background-color 0.3s ease; }\n"
+        << "        .btn:hover { background-color: #0056b3; }\n"
+        << "    </style>\n"
+        << "</head>\n"
+        << "<body>\n"
+        << "    <div class=\"container\">\n"
+        << "        <h1>" << this->_statusCode << " - " << statusMessage << "</h1>\n"
+        << "        <p>Oops! Something went wrong. The page you were looking for could not be found or an error occurred.</p>\n"
+        << "        <div class=\"buttons\">\n"
+        << "            <a href=\"/\" class=\"btn\">Go Home</a>\n"
+        << "        </div>\n"
+        << "    </div>\n"
+        << "</body>\n"
+        << "</html>";
+
     this->_content = oss.str();
     this->_contentSize = this->_content.size();
+    _setHeaders("text/html");
 }
 
 void    Response::buildCGIResponse(CGI& CGIobj) {
@@ -263,11 +288,40 @@ std::string Response::_generateAutoIndex(const std::string& path, const std::str
     return oss.str();
 }
 
+std::string Response::_generateUploadJSON(const std::string& path) const {
+    std::ostringstream oss;
+    oss << "[";
+
+    DIR* dir = opendir(path.c_str());
+    if (dir) {
+        struct dirent* entry;
+        bool first = true;
+        while ((entry = readdir(dir)) != NULL) {
+            std::string name = entry->d_name;
+            if (name != "." && name != "..") {
+                if (!first)
+                    oss << ",";
+                oss << "\"" << name << "\"";
+                first = false;
+            }
+        }
+        closedir(dir);
+    }
+
+    oss << "]";
+    return (oss.str());
+}
+
+
 bool    isCGIReq(const std::string& resource, const Route* route)
 {
-    DEBUG_LOG(RED << "CGI REQ" << RESET);
-    if (route->cgiPath.empty())
+    DEBUG_LOG(RED << "isCGIReq function" << RESET);
+    DEBUG_LOG("Cgi route = " << route->location << ", CGI path = " << route->cgiPath);
+
+    if (route->cgiPath.empty()) {
+        DEBUG_LOG(RED << "EMPTY CGI PATH" << RESET);
         return (false);
+    }
 
     size_t dotPos = resource.rfind('.');
     if (dotPos == std::string::npos)

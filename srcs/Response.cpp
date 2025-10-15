@@ -24,6 +24,12 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 
     if (S_ISDIR(path_stat.st_mode)) // dir
     {
+        if (req.getContent() == "/uploads/") {
+            this->_content = _generateUploadJSON(resourcePath);
+            _buildResponse(200, req, 0, "applications/json");
+            return;
+        }
+
         bool indexFound = 0;
         for (size_t i = 0; i < route->index.size(); i++) {
             std::string indexPath = resourcePath + "/" + route->index[i];
@@ -70,9 +76,12 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 }
 
 void Response::_handlePOST(Request& req, Server& server, Route* route) {
+    DEBUG_LOG(YELLOW << "In the handlePOST fct" << RESET);
 
-    if (req.getBody().size() > static_cast<size_t>(server.clientMaxBodySize))
-    {
+    std::string bodySize = ftItoa(server.clientMaxBodySize);
+    DEBUG_LOG("Content len = " << req.getContentLen() << std::endl << "Client max body size = " << bodySize << std::endl);
+
+    if (req.getContentLen() > static_cast<size_t>(server.clientMaxBodySize)) {
         buildErrorResponse(413, req, server);
         return;
     }
@@ -84,13 +93,58 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
     }
 
     if (route->uploadEnabled) {
+        DEBUG_LOG(YELLOW << "HERE: uploadEnabled" << RESET);
+        std::string body(req.getBody(), req.getContentLen());
+
+        // Finding the original filename extension
+        std::string filename_key = "filename=\"";
+        size_t filename_pos = body.find(filename_key);
+        if (filename_pos == std::string::npos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find 'filename' in POST body");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+        filename_pos += filename_key.length();
+        size_t filename_end_pos = body.find("\"", filename_pos);
+        if (filename_end_pos == std::string::npos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find closing quote for 'filename'");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+        std::string original_filename = body.substr(filename_pos, filename_end_pos - filename_pos);
+
+        std::string extension = "";
+        size_t dot_pos = original_filename.rfind(".");
+        if (dot_pos != std::string::npos) 
+            extension = original_filename.substr(dot_pos);
+
+        // Finding the start of the actual file data
+        std::string seperator = "\r\n\r\n";
+        size_t data_start_pos = body.find(seperator, filename_end_pos);
+        if (data_start_pos == std::string::npos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find data seperator in POST body");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+        data_start_pos += seperator.length();
+
+        // Find the end of the file data
+        std::string boundary_key = "\r\n--";
+        size_t data_end_pos = body.rfind(boundary_key);
+        if (data_end_pos == std::string::npos || data_end_pos < data_start_pos) {
+            DEBUG_LOG(RED << "Error: " << RESET << "Could not find end boundary in POST body");
+            buildErrorResponse(400, req, server); // Bad Request
+            return;
+        }
+
+        // Creating a new filename and saving the data
         std::stringstream filename_ss;
-        filename_ss << "upload_" << time(NULL);
+        filename_ss << "upload_" << time(NULL) << extension;
         std::string filePath = route->uploadStore + "/"  + filename_ss.str();
 
         std::ofstream newFile(filePath.c_str(), std::ios::binary);
         if (newFile.is_open()) {
-            newFile.write(req.getBody().c_str(), req.getBody().length());
+            newFile.write(body.c_str() + data_start_pos, data_end_pos - data_start_pos);
             newFile.close();
             _buildResponse(201, req, 1, "text/html");
         }
@@ -102,7 +156,13 @@ void Response::_handlePOST(Request& req, Server& server, Route* route) {
 }
 
 void Response::_handleDELETE(Request& req, Server& server, Route* route) {
-    std::string filePath = route->root + req.getContent();
+    std::string filePath = route->path;
+
+    if (filePath.length() >= 5 && filePath.substr(filePath.length() - 5) == ".html") {
+        DEBUG_LOG("Attempt to delete an HTML file denied");
+        buildErrorResponse(403, req, server); // Forbidden
+        return;
+    }
 
     struct stat path_stat;
     if (stat(filePath.c_str(), &path_stat) != 0) {

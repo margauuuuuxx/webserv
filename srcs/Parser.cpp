@@ -118,7 +118,7 @@ void Parser::parseServerElements(Server& server){
 		"clientMaxBodySize",
 		"location"
 	};
-	void (Parser::*f[])(Server&) = {
+	void (Parser::*f[6])(Server&) = {
 		&Parser::parseListen,
 		&Parser::parseHost,
 		&Parser::parseServerName,
@@ -127,13 +127,13 @@ void Parser::parseServerElements(Server& server){
 		&Parser::parseRoutes
 	};
 	for (size_t i = 0; i < 6; ++i) {
-		if (_tokens[_i] == server_tokens[i]) {
+		if (_tokens[this->_i] == server_tokens[i]) {
 			std::cout << "	" << server_tokens[i]<< std::endl;		
 			(this->*f[i])(server);
 			return;
 		}
 	};
-	throw std::runtime_error("unknow dirrective " + _tokens[_i]);
+	throw std::runtime_error("Error: Unknown directive " + _tokens[this->_i]);
 }
 
 void Parser::parseListen(Server& server){
@@ -216,7 +216,7 @@ void Parser::parseRoutes(Server& server){
 	route.location = _tokens[++_i];
 	_i++;
 	if (_tokens[_i] != "{")
-		throw std::runtime_error("dirrective \"location\" has no openning \"{\"");
+		throw std::runtime_error("directive \"location\" has no openning \"{\"");
 	_i++;
 	while (_i < _tokens.size() && _tokens[_i] != "}") {
 		parseRouteElements(route);
@@ -239,7 +239,7 @@ void Parser::parseRouteElements(Route& route){
 		"cgiPath",
 	};
 
-	void (Parser::*f[])(Route&) = {
+	void (Parser::*f[8])(Route&) = {
 		&Parser::parseRoot,
 		&Parser::parseIndex,
 		&Parser::parseAllowMethods,
@@ -250,14 +250,14 @@ void Parser::parseRouteElements(Route& route){
 		&Parser::parseCgiPath,
 	};
 
-	for (size_t i = 0; i < 9; ++i) {
-		if (_tokens[_i] == route_tokens[i]) {
+	for (size_t i = 0; i < 8; ++i) {
+		if (_tokens[this->_i] == route_tokens[i]) {
 			std::cout << "		" << route_tokens[i]<< std::endl;		
 			(this->*f[i])(route);
 			return;
 		}
 	};
-	throw std::runtime_error("unknow dirrective in root: " + _tokens[_i]);
+	throw std::runtime_error("Error: Unknown directive in root: " + _tokens[_i]);
 }
 void Parser::parseRoot(Route& route){
 	route.root = _tokens[++_i];
