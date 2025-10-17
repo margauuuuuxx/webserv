@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 							DEBUG_LOG(GREEN << "CGI process for client " << client_fd << " finished" << RESET);
 
 							pid_t cgi_pid = clientFdtoCGIPid[client_fd];
-							waitpid(cgi_pid, NULL, 0);
+							waitpid(cgi_pid, NULL, WNOHANG); // PROBLEM HERE
 
 							poller.removeFd(fd);
 							CGIPipeToClientFd.erase(fd);
@@ -90,6 +90,7 @@ int main(int argc, char **argv) {
 							std::vector<char> responseData = res.getResponse();
 							if (!responseData.empty()) {
 								pendingResponses[client_fd] = responseData;
+								chunkingResponses.erase(client_fd);
 								poller.modifyFd(client_fd, POLLOUT);
 							} else {
 								chunkingResponses.erase(client_fd);

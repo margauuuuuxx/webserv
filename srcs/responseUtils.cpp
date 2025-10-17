@@ -95,13 +95,19 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
 }
 
 void    Response::_startCGI(const std::string& scriptPath, Request& req, Server& server, Route* route) {
+    DEBUG_LOG(YELLOW << "→ _startCGI called with scriptPath=" << scriptPath << RESET);
+    DEBUG_LOG(YELLOW << "→ route ptr=" << route << ", route->cgiPath=" << (route ? route->cgiPath : "NULL") << RESET);
     _CGI = new CGI(req, server, scriptPath, route);
+    DEBUG_LOG(YELLOW << "→ CGI object created" << RESET);
     _CGI_pid = _CGI->execute();
+    DEBUG_LOG(YELLOW << "→ CGI execute() returned pid=" << _CGI_pid << RESET);
 
     if (_CGI_pid > 0) {
         _isCGI = true;
         _CGI_pipe_fd = _CGI->getPipeReadFd();
+        DEBUG_LOG(YELLOW << "→ CGI setup complete, pipe_fd=" << _CGI_pipe_fd << RESET);
     } else {
+        DEBUG_LOG(RED << "→ CGI execute() failed" << RESET);
         delete (_CGI);
         _CGI = NULL;
         buildErrorResponse(500, req, server); // Internal Server Error
@@ -153,7 +159,9 @@ void    Response::handleCGI() {
         }
         if (_headersMap.find("Content-Type") == _headersMap.end())
             _headersMap["Content-Type"] = "text/html";
-        _headersMap["Content-Length"] = _content.length();
+        std::stringstream ss;
+        ss << _content.length();
+        _headersMap["Content-Length"] = ss.str();
     }
 }
 

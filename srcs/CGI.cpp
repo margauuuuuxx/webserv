@@ -1,8 +1,11 @@
 #include "../includes/includes.hpp"
 
 CGI::CGI(Request &req, Server& server, const std::string& scriptPath, Route* route) : _req(req), _server(server), _scriptPath(scriptPath), _envv(NULL), _pid(-1), _pipe_out_fd(-1), _route(route) {
+	DEBUG_LOG(GREEN << "CGI constructor: route=" << route << ", cgiPath=" << (route ? route->cgiPath : "NULL") << RESET);
 	_reqURL = req.getContent();
+	DEBUG_LOG(GREEN << "CGI constructor: calling _setEnvv()" << RESET);
 	_setEnvv();
+	DEBUG_LOG(GREEN << "CGI constructor: _setEnvv() complete" << RESET);
 }
 
 CGI::~CGI() {
@@ -40,6 +43,7 @@ void	CGI::_setEnvv() {
 
 // The goal of tis function is to create a child process that will transform into the CGI script
 pid_t	CGI::execute() {
+	DEBUG_LOG(YELLOW << "CGI::execute() started" << RESET);
 	int pipe_in[2]; // sending data to the script
 	int pipe_out[2]; // getting data from the script 
 
@@ -47,6 +51,7 @@ pid_t	CGI::execute() {
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_in");
 		return (-1);
 	}
+	DEBUG_LOG(YELLOW << "pipe_in created" << RESET);
 
 	if (pipe(pipe_out) == -1) {
 		close(pipe_in[0]);
@@ -54,8 +59,10 @@ pid_t	CGI::execute() {
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: pipe() failed for pipe_out");
 		return (-1);
 	}
+	DEBUG_LOG(YELLOW << "pipe_out created" << RESET);
 
 	_pid = fork();
+	DEBUG_LOG(YELLOW << "fork() returned: " << _pid << RESET);
 	if (_pid == -1) {
 		DEBUG_LOG(RED << "Error: " << RESET << "handleCGI: fork() failed");
 		closePipes(pipe_in, pipe_out);
@@ -63,6 +70,7 @@ pid_t	CGI::execute() {
 	}
 
 	if (_pid == 0) { // child 
+		DEBUG_LOG(YELLOW << "In child process" << RESET);
 		dup2(pipe_in[0], STDIN_FILENO); // read end
 		dup2(pipe_out[1], STDOUT_FILENO); // write end
 		closePipes(pipe_in, pipe_out);
@@ -78,6 +86,7 @@ pid_t	CGI::execute() {
 			resolved_path,
 			NULL
 		};
+		DEBUG_LOG(YELLOW << "Child calling execve with argv[0]=" << argv[0] << ", argv[1]=" << argv[1] << RESET);
 		execve(argv[0], argv, _envv);
 
 		std::cerr << RED << "EXECVE FAILED" << RESET << std::endl;
@@ -85,6 +94,7 @@ pid_t	CGI::execute() {
 		DEBUG_LOG(RED << "EXIT: " << RESET << "handleCGI: execve() failed: " << strerror(errno) << " for absolute script path: " << resolved_path);
 		exit(EXIT_FAILURE);
 	} else { // parent 
+		DEBUG_LOG(YELLOW << "In parent process, child pid=" << _pid << RESET);
 		close(pipe_in[0]);
 		close(pipe_out[1]);
 
@@ -94,6 +104,7 @@ pid_t	CGI::execute() {
 		close(pipe_in[1]);
 		
 		_pipe_out_fd = pipe_out[0];
+		DEBUG_LOG(YELLOW << "Parent returning pid=" << _pid << RESET);
 		return (_pid);
 	}
 	return (-1);
