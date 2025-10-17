@@ -21,11 +21,10 @@ Socket::Socket(int port) {
     addr.sin_addr.s_addr = INADDR_ANY;
     addr.sin_port = htons(port);
 	addrlen = sizeof(addr);
-	clientaddrlen = sizeof(clientaddr);
 	if (bind(sockfd, (struct sockaddr*)&addr, addrlen) < 0) {
 		throw std::runtime_error("error with bind");
 	}
-	this->backlog = 3;
+	this->backlog = 128;
 	if (listen(sockfd, backlog) < 0) {
 		throw std::runtime_error("error with listen");
 	}
@@ -50,13 +49,8 @@ std::string	Socket::getClientIP() const {
 }
 
 int Socket::clientConnect(){
-	// Close previous client connection if exists
-	if (listenSocketFd != -1) {
-		close(listenSocketFd);
-		listenSocketFd = -1;
-	}
 
-	if ((listenSocketFd = accept(sockfd, (struct sockaddr*)&(this->clientaddr), (&this->clientaddrlen))) < 0) {
+	 if ((listenSocketFd = accept(sockfd, (struct sockaddr*)&(this->clientaddr), (&this->clientaddrlen))) < 0) {
 		throw std::runtime_error("error with accept");
     }
 	return listenSocketFd;
