@@ -8,8 +8,7 @@ Response::Response() : _contentSize(0), _statusCode(0) {
 Response::~Response() {}
 
 void Response::_handleGET(Request& req, Server& server, Route* route) {
-    std::string resourcePath = route->path; // PARSER 
-    // HAVING THE RIGHT PATH FOR /hello/index.html --> www/index.html
+    std::string resourcePath = route->path;
 
     if (!resourcePath.empty())
         DEBUG_LOG(YELLOW << "GET" << std::endl << RESET << "Route path = " << route->path << std::endl << "Content = " << req.getContent() << std::endl << "GET resource path: " << resourcePath << std::endl << YELLOW << "-----------" << RESET);
@@ -18,7 +17,6 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 
     struct stat path_stat;
     if (stat(resourcePath.c_str(), &path_stat) != 0) {
-		DEBUG_LOG("error 404" << std::endl);
         buildErrorResponse(404, req, server);
         return;
     }
@@ -27,7 +25,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
     {
         if (req.getContent() == "/uploads/") {
             this->_content = _generateUploadJSON(resourcePath);
-            _buildResponse(200, req, 0, "applications/json");
+            _buildResponse(200, req, 0, "application/json");
             return;
         }
 
@@ -206,7 +204,6 @@ std::vector<char> Response::getResponse() const {
     
     std::string resStr = res.str();
     std::vector<char> resVector(resStr.begin(), resStr.end());
-    // CONVERTIR EN OCTETS 
 
     return (resVector);
 }
@@ -242,7 +239,6 @@ void Response::handleRequest(Request& req, Server& server) {
     if (it != handlers.end()
         && std::find(route->allowedMethods.begin(), route->allowedMethods.end(), method) != route->allowedMethods.end()){
         (this->*(it->second))(req, server, route);
-		DEBUG_LOG("raisponse built");
 	}
     else
     {
