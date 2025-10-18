@@ -4,7 +4,11 @@
 	This class is responsible for building the appropriate HTTP response based on the parsed Request object and the Server config.
 */
 
+<<<<<<< HEAD
 Request::Request(void) { this->reset(); }
+=======
+Request::Request(void) {this->reset();}
+>>>>>>> qalpesse
 
 Request::~Request(void) {}
 
@@ -55,7 +59,17 @@ std::map<std::string, std::string>	const	&Request::getHeaders(void) const {
 	return (this->_headers);
 }
 
+<<<<<<< HEAD
 const std::vector<char>	&Request::getBody(void) const { return (this->_body); }
+=======
+char	const	*Request::getBody(void) const {
+	return (this->_body);
+}
+
+std::string const &Request::getToParse(void) const{
+	return (this->_toParse);
+}
+>>>>>>> qalpesse
 
 size_t const &Request::getContentLen(void) const{
 	return (this->_contentLen);
@@ -63,7 +77,30 @@ size_t const &Request::getContentLen(void) const{
 
 int	Request::getErrorCode(void) const { return (this->_errorCode); }
 
+<<<<<<< HEAD
 const std::string	&Request::getStatusMessage(void) const { return (this->_statusMessage); }
+=======
+bool const &Request::getTransferEncoding(void) const{
+	return (this->_transferEncoding);
+}
+
+bool const &Request::getWaitingState(void) const{
+	return (this->_waitingForData);
+}
+
+bool const &Request::getErrorFlag(void) const {
+	return (this->_error);
+}
+
+void Request::setContentLen(size_t len){
+	this->_contentLen = len;
+	this->_contentLenCopy = len - 1;
+}
+
+void Request::setTransferEncoding(bool state){
+	this->_transferEncoding = state;
+}
+>>>>>>> qalpesse
 
 void	Request::setClientIP(const std::string& ip) {
 	this->_clientIP = ip;
@@ -84,6 +121,11 @@ void Request::reset(void)
 	this->_rawRequest.clear();
 	this->_method.clear();
 	this->_version.clear();
+<<<<<<< HEAD
+=======
+	std::memset(this->_body, 0, MAX_BODY_SIZE);
+	this->_indexBody = 0;
+>>>>>>> qalpesse
 	this->_headers.clear();
 	this->_multiHeaders.clear();
 	this->_parsingState = PARSING_REQUEST_LINE;
@@ -91,6 +133,7 @@ void Request::reset(void)
 	this->_statusMessage.clear();
 }
 
+<<<<<<< HEAD
 void	Request::appendBody(char *cbuffer, size_t bytes) {
 	if (cbuffer && bytes > 0)
 		this->_body.insert(this->_body.end(), cbuffer, cbuffer + bytes);
@@ -98,6 +141,96 @@ void	Request::appendBody(char *cbuffer, size_t bytes) {
 
 void	Request::appendToRawRequest(const char* buffer, int bytes) {
 	this->_rawRequest.append(buffer, bytes);
+=======
+int isIncomplete(Request &obj, std::string &content)
+{
+	if (!obj.getTransferEncoding() && obj.getContentLenCopy() == obj.getContentLen())
+		return 0;
+	size_t crlf = content.find("\r\n\r\n");
+	if (crlf == std::string::npos)
+	{
+		// std::cout << "pas de CRLFCRLF dans isincomplete" << std::endl;
+		return (1);
+	}
+	size_t contentLen = obj.getContentLen();
+	size_t contentLenCopy = obj.getContentLenCopy();
+	if (obj.getTransferEncoding() && contentLenCopy != 0)
+	{
+		// std::cout << "transfer encoding pas termine" << std::endl;
+		return (2);
+	}
+	else if (contentLen != 0 && contentLen != std::string::npos && contentLenCopy != 0 && contentLenCopy != std::string::npos)
+	{
+		// std::cout << "content-length pas termine" << std::endl;
+		return (2);
+	}
+	return (0);
+}
+
+/*
+	La fonction detectBodyHeader sert à vérifier si un content-length
+	ou un transfer-encoding est présent.
+	Les deux headers ne sont pas compatibles et donc ne peuvent pas être ensemble.
+	La fonction prévient les doublons et la compatibilité.
+	Elle met aussi à jour les variables associées aux headers.
+*/
+int detectBodyHeader(Request &obj, std::string buffer)
+{
+	std::istringstream istream(buffer);
+	std::string line;
+	size_t pos;
+	int res = 0;
+
+	// std::cout << "to parse dans body header: " << obj.getToParse() << std::endl;
+	// std::cout << "detect body header" << std::endl;
+	while (std::getline(istream, line, '\n'))
+	{
+		//std::cout << "test de boucle" << std::endl;
+		std::cout << line << std::endl;
+		if (line == "\r")
+			break ;
+		if (res >= 2)
+		{
+			//std::cout << "res = " << res << " au début de la boucle" << std::endl;
+			return (res);
+		}
+		pos = line.find(":");
+		if (pos == std::string::npos)
+		{
+			//std::cout << "pas de ':' dans line: " << line << std::endl;
+			continue ;
+		}
+		//std::cout << "line: " << line << std::endl;
+		std::string header(toLower(line, pos + 1));
+		//std::cout << "header: " << header << std::endl;
+		std::istringstream value_stream(line);
+		if (header.find("transfer-encoding:") != std::string::npos)
+		{
+			std::string chunked;
+			value_stream >> header >> chunked;
+			if (chunked.find("chunked") == std::string::npos)
+				obj.setContentLen(std::string::npos - 1);
+			else
+				obj.setTransferEncoding(true);
+			res++;
+			//std::cout << "res: " << res << std::endl;
+		}
+		else if (header.find("content-length:") != std::string::npos)
+		{
+			// std::cout << "\e[0;31myo j'ai un content-lenght\e[0;m" << std::endl;
+			size_t value;
+			if (!(value_stream >> header >> value))
+				obj.setContentLen(std::string::npos - 1);
+			else
+				obj.setContentLen(value);
+			res++;
+			// std::cout << "res: " << res << std::endl;
+			// std::cout << "value: " << value << std::endl;
+		}
+	}
+	//std::cout << "tout est normal, on retourne " << res << std::endl; 
+	return (res);
+>>>>>>> qalpesse
 }
 
 void Request::parse(size_t clientMaxBodySize) {

@@ -50,6 +50,7 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
         std::string absolutePath = server.mainRoot + "/" + it->second; // CHECK THE WORKING OF THIS
         if (readFile(it->second, this->_content)) {
             this->_contentSize = this->_content.size();
+			_setHeaders("text/html");
             return;
         }
     }
@@ -318,6 +319,7 @@ bool    isCGIReq(const std::string& resource, const Route* route)
 {
     if (route->cgiPath.empty())
         return (false);
+    }
 
     size_t dotPos = resource.rfind('.');
     if (dotPos == std::string::npos)

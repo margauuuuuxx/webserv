@@ -18,6 +18,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 
     struct stat path_stat;
     if (stat(resourcePath.c_str(), &path_stat) != 0) {
+		DEBUG_LOG("error 404" << std::endl);
         buildErrorResponse(404, req, server);
         return;
     }
@@ -239,8 +240,10 @@ void Response::handleRequest(Request& req, Server& server) {
     std::string method = req.getMethod();
     std::map<std::string, HandlerFct>::const_iterator it = handlers.find(method);
     if (it != handlers.end()
-        && std::find(route->allowedMethods.begin(), route->allowedMethods.end(), method) != route->allowedMethods.end())
+        && std::find(route->allowedMethods.begin(), route->allowedMethods.end(), method) != route->allowedMethods.end()){
         (this->*(it->second))(req, server, route);
+		DEBUG_LOG("raisponse built");
+	}
     else
     {
         buildErrorResponse(405, req, server);

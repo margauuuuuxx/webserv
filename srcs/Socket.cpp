@@ -24,7 +24,7 @@ Socket::Socket(int port) {
 	if (bind(sockfd, (struct sockaddr*)&addr, addrlen) < 0) {
 		throw std::runtime_error("error with bind");
 	}
-	this->backlog = 3;
+	this->backlog = 128;
 	if (listen(sockfd, backlog) < 0) {
 		throw std::runtime_error("error with listen");
 	}

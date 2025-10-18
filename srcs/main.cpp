@@ -18,7 +18,6 @@ int main(int argc, char **argv) {
 	if (argc != 2) {
 		return std::cout << RED << "Error: " << RESET << "wrong number of args" << std::endl, 1;	
 	}
-
 	Parser parser;
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
@@ -31,7 +30,6 @@ int main(int argc, char **argv) {
 
 		// Création des sockets serveurs
 		for (size_t i = 0; i < servers.size(); i++) {
-			std::cout << "i: " << i << std::endl;
 			try {
 				sockets.push_back(new Socket(servers[i].port));
 				sockets[i]->addServer(servers[i]);
