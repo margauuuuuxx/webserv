@@ -25,7 +25,7 @@ int main(int argc, char **argv) {
 	SocketArray sockets;
 	std::map<int, Socket*> fdToSocket;
 	std::map<int, std::vector<char> > pendingResponses;
-	std::map<int, Response> chunkingResponses;
+	std::map<int, Response*> chunkingResponses;
 	std::map<int, int> CGIPipeToClientFd;
 	std::map<int, pid_t> clientFdtoCGIPid;
 
@@ -73,11 +73,12 @@ int main(int argc, char **argv) {
 
 					if (!isListener && CGIPipeToClientFd.count(fd)) {
 						int client_fd = CGIPipeToClientFd[fd];
-						Response& res = chunkingResponses[client_fd];
+						chunkingResponses[client_fd] = new Response();
+						Response* res = chunkingResponses[client_fd];
 
-						res.handleCGI();
+						res->handleCGI();
 
-						if (!res.isCGI()) {
+						if (!res->isCGI()) {
 							DEBUG_LOG(GREEN << "CGI process for client " << client_fd << " finished" << RESET);
 
 							pid_t cgi_pid = clientFdtoCGIPid[client_fd];
@@ -87,7 +88,7 @@ int main(int argc, char **argv) {
 							CGIPipeToClientFd.erase(fd);
 							clientFdtoCGIPid.erase(client_fd);
 
-							std::vector<char> responseData = res.getResponse();
+							std::vector<char> responseData = res->getResponse();
 							if (!responseData.empty()) {
 								pendingResponses[client_fd] = responseData;
 								chunkingResponses.erase(client_fd);
@@ -123,12 +124,13 @@ int main(int argc, char **argv) {
 							request.parse(server->clientMaxBodySize);
 
 							if (request.parsingFinished()) {
-								Response& res = chunkingResponses[fd];
-								res.handleRequest(request, *server);
+								chunkingResponses[fd] = new Response();
+								Response* res = chunkingResponses[fd];
+								res->handleRequest(request, *server);
 
-								if (res.isCGI()) {
-									pid_t cgi_pid = res.getCGIPid();
-									int pipe_fd = res.getCGIPipeFd();
+								if (res->isCGI()) {
+									pid_t cgi_pid = res->getCGIPid();
+									int pipe_fd = res->getCGIPipeFd();
 
 									poller.addFd(pipe_fd, POLLIN);
 									CGIPipeToClientFd[pipe_fd] = fd;
@@ -136,10 +138,10 @@ int main(int argc, char **argv) {
 
 									DEBUG_LOG("Started CGI process " << cgi_pid << " for client " << fd);
 								}
-								else if (res.isChunkingActive())
+								else if (res->isChunkingActive())
 									poller.modifyFd(fd, POLLOUT);
 								else {
-									std::vector<char> responseData = res.getResponse();
+									std::vector<char> responseData = res->getResponse();
 									if (!responseData.empty()) {
 										pendingResponses[fd] = responseData;
 										poller.modifyFd(fd, POLLOUT);
@@ -158,21 +160,21 @@ int main(int argc, char **argv) {
 						}
 					}
 				} else if (fds[i].revents & POLLOUT) {
-					std::map<int, Response>::iterator it_chunk = chunkingResponses.find(fd);
+					std::map<int, Response*>::iterator it_chunk = chunkingResponses.find(fd);
 					if (it_chunk != chunkingResponses.end()) {
-						Response& res = it_chunk->second;
+						Response* res = it_chunk->second;
 						
-						if (res.getResponseBuffer().empty() && res.isChunkingActive())
-							res.prepareNextChunk(4096);
+						if (res->getResponseBuffer().empty() && res->isChunkingActive())
+							res->prepareNextChunk(4096);
 
-						const std::vector<char>& buffer = res.getResponseBuffer();
+						const std::vector<char>& buffer = res->getResponseBuffer();
 						if (!buffer.empty()) {
 							ssize_t sent = send(fd, &buffer[0], buffer.size(), 0);
 							if (sent > 0)
-								res.consumeBufferBytes(sent);
+								res->consumeBufferBytes(sent);
 						}
 
-						if (!res.isChunkingActive() && res.getResponseBuffer().empty()) {
+						if (!res->isChunkingActive() && res->getResponseBuffer().empty()) {
 							chunkingResponses.erase(it_chunk);
 							poller.modifyFd(fd, POLLIN);
 						}
