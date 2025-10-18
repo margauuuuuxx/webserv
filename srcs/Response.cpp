@@ -55,7 +55,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
             }
             else {
                 DEBUG_LOG("NOT found and no autoindex");
-                buildErrorResponse(403, req, server);
+                buildErrorResponse(404, req, server);
             }
         }
     }
