@@ -50,6 +50,7 @@ void Response::buildErrorResponse(int code, Request& req, Server& server) {
         std::string absolutePath = server.mainRoot + "/" + it->second; // CHECK THE WORKING OF THIS
         if (readFile(it->second, this->_content)) {
             this->_contentSize = this->_content.size();
+			_setHeaders("text/html");
             return;
         }
     }

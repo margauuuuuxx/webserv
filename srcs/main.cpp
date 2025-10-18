@@ -121,6 +121,7 @@ int main(int argc, char **argv) {
 
 							std::vector<char> response = handleRequest(&buffer[0], *(sock->getServer()), fd, bytes);
 							if (!response.empty()) {
+								DEBUG_LOG("res ready to send");
 								pendingResponses[fd] = response;
 								poller.modifyFd(fd, POLLOUT); // passe en écriture
 							}
