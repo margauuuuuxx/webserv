@@ -319,7 +319,6 @@ bool    isCGIReq(const std::string& resource, const Route* route)
 {
     if (route->cgiPath.empty())
         return (false);
-    }
 
     size_t dotPos = resource.rfind('.');
     if (dotPos == std::string::npos)
