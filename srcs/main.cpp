@@ -3,47 +3,26 @@
 volatile sig_atomic_t stop = 0; // utilisé pour intercepter SIGINT de manière sûre
 
 std::vector<char> handleRequest(char* buffer, Server& server, int client_fd, int bytes){
-	(void)buffer;     // non utilisés ici
-    (void)server;
-    (void)client_fd;
-    (void)bytes;
-	// Response res;
-	// Request& request = server.requests[client_fd];  // default-constructed if not already there
-	// //std::cout << "buffer dans handleRequest: " << buffer << std::endl;
-	// //std::cout << "on va dans setToParse" << std::endl;
-	// if (request.setToParse(buffer, bytes))
-	// {
-	// 	//std::cout << "setToParse OK" << std::endl;
-	// 	//std::cout << "check de toParse: " << std::endl << request.getToParse() << std::endl;
-	// 	request.parse();
-	// 	//std::cout << "\e[0;31mBody:\e[0;m" << std::endl;
-	// 	//std::cout.write(request.getBody(), bytes) << std::endl;
-	// 	std::cout << "SEND:" << std::endl;
-	// 	//std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
-	// 	res.handleRequest(request, server);
-	// 	request.reset();
-	// 	return res.getResponse();
-	// }
-	//
-	// std::vector<char> text;
-	// return text;
-	// Contenu du corps de la réponse
-    std::string body = "<html><body><h1>200 OK</h1><p>Hello from server!</p></body></html>";
+	Response res;
+	Request& request = server.requests[client_fd];  // default-constructed if not already there
+	//std::cout << "buffer dans handleRequest: " << buffer << std::endl;
+	//std::cout << "on va dans setToParse" << std::endl;
+	if (request.setToParse(buffer, bytes))
+	{
+		//std::cout << "setToParse OK" << std::endl;
+		//std::cout << "check de toParse: " << std::endl << request.getToParse() << std::endl;
+		request.parse();
+		//std::cout << "\e[0;31mBody:\e[0;m" << std::endl;
+		//std::cout.write(request.getBody(), bytes) << std::endl;
+		std::cout << "SEND:" << std::endl;
+		//std::cout << "\e[0;34m" << request.getToParse() << "\e[0m" << std::endl;
+		res.handleRequest(request, server);
+		request.reset();
+		return res.getResponse();
+	}
 
-    // Création de l'en-tête HTTP
-    std::ostringstream response_stream;
-    response_stream << "HTTP/1.1 200 OK\r\n"
-                    << "Content-Type: text/html; charset=UTF-8\r\n"
-                    << "Content-Length: " << body.size() << "\r\n"
-                    << "Connection: close\r\n"
-                    << "\r\n"
-                    << body;
-
-    std::string response_str = response_stream.str();
-
-    // Conversion en std::vector<char> pour l’envoi
-    std::vector<char> response(response_str.begin(), response_str.end());
-    return response;
+	std::vector<char> text;
+	return text;
 }
 
 void signalHandler(int sig) {
@@ -55,7 +34,6 @@ int main(int argc, char **argv) {
 	if (argc != 2) {
 		return std::cout << RED << "Error: " << RESET << "wrong number of args" << std::endl, 1;	
 	}
-
 	Parser parser;
 	parser.parsefile(argv[1]);
 	std::vector<Server> servers = parser.getServer();
@@ -68,7 +46,6 @@ int main(int argc, char **argv) {
 
 		// Création des sockets serveurs
 		for (size_t i = 0; i < servers.size(); i++) {
-			std::cout << "i: " << i << std::endl;
 			try {
 				sockets.push_back(new Socket(servers[i].port));
 				sockets[i]->addServer(servers[i]);
