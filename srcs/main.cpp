@@ -50,6 +50,7 @@ int main(int argc, char **argv) {
 		}
 
 		signal(SIGINT, signalHandler);
+signal(SIGPIPE, SIG_IGN);  // Ignore SIGPIPE to prevent crashes on pipe writes
 
 		while (!stop) {
 			poller.wait(-1);

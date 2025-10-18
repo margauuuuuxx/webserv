@@ -99,8 +99,12 @@ pid_t	CGI::execute() {
 		close(pipe_out[1]);
 
 		const std::vector<char>& body = _req.getBody();
-		if (!body.empty())
-			write(pipe_in[1], &body[0], body.size());
+		if (!body.empty()) {
+			ssize_t written = write(pipe_in[1], &body[0], body.size());
+			if (written < 0) {
+				DEBUG_LOG(YELLOW << "Warning: write to CGI stdin failed: " << strerror(errno) << RESET);
+			}
+		}
 		close(pipe_in[1]);
 		
 		_pipe_out_fd = pipe_out[0];
