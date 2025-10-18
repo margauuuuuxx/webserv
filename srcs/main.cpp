@@ -74,7 +74,6 @@ signal(SIGPIPE, SIG_IGN);  // Ignore SIGPIPE to prevent crashes on pipe writes
 
 					if (!isListener && CGIPipeToClientFd.count(fd)) {
 						int client_fd = CGIPipeToClientFd[fd];
-						chunkingResponses[client_fd] = new Response();
 						Response* res = chunkingResponses[client_fd];
 
 						res->handleCGI();
