@@ -78,8 +78,21 @@
             event.preventDefault();
 
             const form = event.target;
-            const formData = new FormData(form);
+            const fileInput = form.querySelector('input[type="file"]');
             const statusDiv = document.getElementById('uploadStatus');
+
+            // Check if a file is selected
+            if (!fileInput.files || fileInput.files.length === 0) {
+                statusDiv.textContent = 'Please select a file to upload!';
+                statusDiv.className = 'error';
+                setTimeout(() => {
+                    statusDiv.textContent = '';
+                    statusDiv.className = '';
+                }, 3000);
+                return;
+            }
+
+            const formData = new FormData(form);
 
             statusDiv.textContent = 'Uploading...';
             statusDiv.className = '';
@@ -96,7 +109,7 @@
                     setTimeout(() => {
                         statusDiv.textContent = '';
                         statusDiv.className = '';
-                    }, 2000);
+                    }, 3000);
                 } else {
                     statusDiv.textContent = 'Upload failed. Status: ' + response.status;
                     statusDiv.className = 'error';
