@@ -138,6 +138,9 @@ void Parser::parseServerElements(Server& server){
 
 void Parser::parseListen(Server& server){
 
+	if (server.port != -1) {
+        throw std::runtime_error("Port already set");
+	}
 	std::istringstream iss(_tokens[++_i]);
     iss >> server.port;
     if (iss.fail()) {
@@ -202,6 +205,9 @@ void Parser::parseErrorPage(Server& server){
 }
 
 void Parser::parseClientMaxBodySize(Server& server){
+	if (server.clientMaxBodySize != -1) {
+        throw std::runtime_error("client max body sets multiple times");
+	}
 	std::istringstream iss(_tokens[++_i]);
     iss >> server.clientMaxBodySize;
     if (iss.fail()) {
@@ -228,6 +234,7 @@ void Parser::parseRoutes(Server& server){
 }
 
 void Parser::parseRouteElements(Route& route){
+	int assigned[] = {0, 0, 0, 0, 0, 0, 0, 0}; 
 	std::string route_tokens[] = {
 		"root",
 		"index",
@@ -252,7 +259,11 @@ void Parser::parseRouteElements(Route& route){
 
 	for (size_t i = 0; i < 8; ++i) {
 		if (_tokens[this->_i] == route_tokens[i]) {
+			if (assigned[i] == 1){
+				throw std::runtime_error(_tokens[_i] + " is already assigned in the location " + route.location);
+			}
 			std::cout << "		" << route_tokens[i]<< std::endl;		
+			assigned[i] = 1;
 			(this->*f[i])(route);
 			return;
 		}

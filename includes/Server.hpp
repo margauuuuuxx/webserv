@@ -27,7 +27,7 @@ public:
 	std::vector<std::string>	serverNames;
 	std::map<int, std::string>	errorPages;  
 	int							clientMaxBodySize;
-	std::vector<Route>			routes;
+std::vector<Route>			routes;
 	std::map<int, Request>		requests;
 	std::string					mainRoot;
 	
