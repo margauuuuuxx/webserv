@@ -48,7 +48,8 @@ std::string	Socket::getClientIP() const {
 	return inet_ntoa(this->clientaddr.sin_addr);
 }
 
-int Socket::clientConnect(){
+int Socket::clientConnect() {
+	this->clientaddrlen = sizeof(this->clientaddr);
 
 	 if ((listenSocketFd = accept(sockfd, (struct sockaddr*)&(this->clientaddr), (&this->clientaddrlen))) < 0) {
 		throw std::runtime_error("error with accept");

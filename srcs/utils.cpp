@@ -12,28 +12,6 @@ std::string loadFile(const std::string &path)
     return (buffer.str());
 }
 
-static int	count_char(long a)
-{
-	long	i;
-	int		count;
-
-	i = 1;
-	count = 0;
-	if (a < 0)
-	{
-		a *= -1;
-		count++;
-	}
-	if (a == 0)
-		count++;
-	while (i <= a)
-	{
-		i *= 10;
-		count++;
-	}
-	return (count);
-}
-
 std::string toLower(std::string line, size_t end)
 {
 	std::string::iterator it = line.begin();
