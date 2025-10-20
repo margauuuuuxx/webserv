@@ -9,7 +9,7 @@
 
 Parser::Parser(){}
 Parser::~Parser(){}
-void Parser::parsefile(const std::string& filename){
+int Parser::parsefile(const std::string& filename){
 	try{
 		std::ifstream file(filename.c_str());
 		if (!file.is_open()) {
@@ -27,9 +27,10 @@ void Parser::parsefile(const std::string& filename){
 		setAbsoluteRootPath(absoluteRootPath);
 		parser();
 		printServer();
+		return 0;
 	}catch(std::exception& e){
 		std::cout << "Parsing error: " << e.what() << std::endl;
-		exit(1);
+		return 1;
 	}
 }
 

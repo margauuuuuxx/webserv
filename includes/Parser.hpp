@@ -12,7 +12,7 @@ public:
 	Parser();
 	~Parser();
 
-	void 	parsefile(const std::string& filename);
+	int 	parsefile(const std::string& filename);
 	void	setAbsoluteRootPath(const std::string& path);
 	
 	std::vector<Server> getServer() const;

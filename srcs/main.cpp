@@ -19,7 +19,8 @@ int main(int argc, char **argv) {
 		return std::cout << RED << "Error: " << RESET << "wrong number of args" << std::endl, 1;	
 	}
 	Parser parser;
-	parser.parsefile(argv[1]);
+	if (parser.parsefile(argv[1]))
+		return 1;
 	std::vector<Server> servers = parser.getServer();
 	SocketArray sockets;
 	std::map<int, Socket*> fdToSocket;
