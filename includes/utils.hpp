@@ -3,7 +3,6 @@
 #include "includes.hpp"
 
 std::string         loadFile(const std::string &path);
-char	            *ftItoa(int n);
 std::string         toLower(std::string line, size_t end);
 std::string         ftStrtrim(std::string s);
 size_t		        ft_strchr(const char *s, const char *str, int bytes, size_t pos);

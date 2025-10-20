@@ -77,7 +77,7 @@ void Response::_handleGET(Request& req, Server& server, Route* route) {
 void Response::_handlePOST(Request& req, Server& server, Route* route) {
     DEBUG_LOG(YELLOW << "In the handlePOST fct" << RESET);
 
-    std::string bodySize = ftItoa(server.clientMaxBodySize);
+    std::string bodySize = intToString(server.clientMaxBodySize);
     DEBUG_LOG("Content len = " << req.getContentLen() << std::endl << "Client max body size = " << bodySize << std::endl);
 
     if (req.getContentLen() > static_cast<size_t>(server.clientMaxBodySize)) {
