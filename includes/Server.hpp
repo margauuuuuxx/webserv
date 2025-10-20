@@ -13,6 +13,7 @@ struct Route{
 	bool 						uploadEnabled;
 	std::string 				uploadStore;
 	std::string					path;
+	std::vector<bool>			assigned;
 	
 	Route();
 };
@@ -30,6 +31,7 @@ public:
 	std::vector<Route>			routes;
 	std::map<int, Request>		requests;
 	std::string					mainRoot;
+	std::vector<bool>			assigned;
 	
 	void printServerInfos() const;
 	

@@ -29,6 +29,7 @@ void Parser::parsefile(const std::string& filename){
 		printServer();
 	}catch(std::exception& e){
 		std::cout << "Parsing error: " << e.what() << std::endl;
+		exit(1);
 	}
 }
 
@@ -60,13 +61,6 @@ void Parser::cleanComments(std::string& line) const {
 	}
 }
 
-// std::ifstream Parser::openfile(const std::string& filename){
-// 	std::ifstream file(filename);
-// 	if (!file.is_open()) {
-// 		throw std::runtime_error("Cannot open config file: " + filename);
-// 	}
-// 	return file;
-// }
 
 void Parser::printTokens() const {
     for (size_t i = 0; i < _tokens.size(); i++) {
@@ -92,6 +86,7 @@ void Parser::parser(){
 
 void Parser::parseServer(){
 	Server server;
+	server.assigned.assign(2, false);
 
 	std::cout << "Server" << std::endl;
 	server.mainRoot = this->_absoluteRootPath;
@@ -138,6 +133,10 @@ void Parser::parseServerElements(Server& server){
 
 void Parser::parseListen(Server& server){
 
+	if (server.assigned[0] == true)
+		throw std::runtime_error("port assigned multiple times");
+	else
+		server.assigned[0] = true;
 	std::istringstream iss(_tokens[++_i]);
     iss >> server.port;
     if (iss.fail()) {
@@ -202,6 +201,10 @@ void Parser::parseErrorPage(Server& server){
 }
 
 void Parser::parseClientMaxBodySize(Server& server){
+	if (server.assigned[1] == true)
+		throw std::runtime_error("clientMaxBodySize assigned multiple times");
+	else
+		server.assigned[1] = true;
 	std::istringstream iss(_tokens[++_i]);
     iss >> server.clientMaxBodySize;
     if (iss.fail()) {
@@ -213,6 +216,7 @@ void Parser::parseClientMaxBodySize(Server& server){
 
 void Parser::parseRoutes(Server& server){
 	Route route;
+	route.assigned.assign(8, false);
 	route.location = _tokens[++_i];
 	_i++;
 	if (_tokens[_i] != "{")
@@ -252,12 +256,15 @@ void Parser::parseRouteElements(Route& route){
 
 	for (size_t i = 0; i < 8; ++i) {
 		if (_tokens[this->_i] == route_tokens[i]) {
-			std::cout << "		" << route_tokens[i]<< std::endl;		
+			if (route.assigned[i] == true)
+				throw std::runtime_error(_tokens[_i] + " is already assigned in the location " + route.location);
+			std::cout << "		" << route_tokens[i]<< std::endl;	
+			route.assigned[i] = true;	
 			(this->*f[i])(route);
 			return;
 		}
 	};
-	throw std::runtime_error("Error: Unknown directive in root: " + _tokens[_i]);
+	throw std::runtime_error("Unknown directive in location: " + _tokens[_i]);
 }
 void Parser::parseRoot(Route& route){
 	route.root = _tokens[++_i];
