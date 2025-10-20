@@ -175,8 +175,8 @@ void Request::parse(size_t clientMaxBodySize) {
 						return;
 					}
 					if (this->_headers.size() > MAX_HEADERS_SIZE) {
-						assignError(413, "Content Too Large");
-						DEBUG_LOG(RED << "Error: " << RESET << "413 Content Too Large in headers parsing");
+						assignError(431, "Request Header Fields Too Large");
+						DEBUG_LOG(RED << "Error: " << RESET << "431 Request Header Fields Too Large");
 						return;
 					}
 

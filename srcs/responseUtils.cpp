@@ -4,12 +4,18 @@ void    Response::_initStatusMessages() {
     _statusMessages[200] = "OK";
     _statusMessages[201] = "Created";
     _statusMessages[204] = "No Content";
+    _statusMessages[400] = "Bad Request";
+    _statusMessages[403] = "Forbidden";
     _statusMessages[404] = "Not Found";
     _statusMessages[405] = "Method Not Allowed";
     _statusMessages[409] = "Conflict";
     _statusMessages[413] = "Content Too Large";
+    _statusMessages[414] = "URI Too Large";
+    _statusMessages[431] = "Request Header Fields Too Large";
     _statusMessages[500] = "Internal Server Error";
     _statusMessages[501] = "Not Implemented";
+    _statusMessages[502] = "Bad Gateway";
+    _statusMessages[503] = "Service Unavailable";
     _statusMessages[504] = "Gateway Timeout";
 }
 

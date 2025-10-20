@@ -21,10 +21,7 @@ Route::Route() : autoindex(false), uploadEnabled(false) {
 	path = "";
 }
 
-Server::Server(){
-	this->port = -1;
-	this->clientMaxBodySize = -1;
-}
+Server::Server(){}
 Server::~Server(){}
 void Server::printServerInfos() const {
 	std::cout << "=== SERVER CONFIGURATION ===" << std::endl;
