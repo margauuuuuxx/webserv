@@ -32,8 +32,8 @@ int main(int argc, char **argv) {
 		for (size_t i = 0; i < servers.size(); i++) {
 			try {
 				sockets.push_back(new Socket(servers[i].port));
-				sockets[i]->addServer(servers[i]);
-				poller.addFd(sockets[i]->getFd(), POLLIN);
+				sockets[sockets.size() - 1]->addServer(servers[i]);
+				poller.addFd(sockets[sockets.size() - 1]->getFd(), POLLIN);
 				std::cout << "Serveur en écoute sur le port " << servers[i].port << " ..." << std::endl;
 			}
 			catch (const std::exception& e) {
@@ -41,7 +41,6 @@ int main(int argc, char **argv) {
 				std::cout << "because: " << e.what() << std::endl;
 			}
 		}
-		std::cout << "size " << sockets.size() << std::endl;
 		if (sockets.size() == 0){
 			std::cout << "Couldn't create any server" << std::endl;
 			return 1;
@@ -55,7 +54,6 @@ int main(int argc, char **argv) {
 
 			for (size_t i = 0; i < fds.size(); ++i) {
 				int fd = fds[i].fd;
-
 				// ---- Nouveaux clients ou données à lire ----
 				if (fds[i].revents & POLLIN) {
 					bool isListener = false;
