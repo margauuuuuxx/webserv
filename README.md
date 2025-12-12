@@ -1,3 +1,7 @@
+# Collaborators
+
+Project made with my fellow 42 students and friends: Quentin Alpesse (@QuintusAlp) & Anthony Gooldberg (@Anthoneau)
+
 # Configuration Files Guide
 
 This directory contains various configuration files for testing the webserv project.
